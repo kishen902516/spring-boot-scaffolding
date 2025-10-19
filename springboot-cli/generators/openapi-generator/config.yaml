@@ -1,0 +1,37 @@
+generatorName: spring
+outputDir: ./
+apiPackage: ${PACKAGE}.api.controller
+modelPackage: ${PACKAGE}.api.dto
+invokerPackage: ${PACKAGE}.api
+groupId: ${GROUP_ID}
+artifactId: ${ARTIFACT_ID}
+artifactVersion: 0.0.1-SNAPSHOT
+library: spring-boot
+dateLibrary: java8
+java8: true
+hideGenerationTimestamp: true
+useTags: true
+interfaceOnly: true
+skipDefaultInterface: false
+useBeanValidation: true
+performBeanValidation: true
+useOptional: false
+useSpringBoot3: true
+documentationProvider: springdoc
+openApiNullable: false
+reactive: false
+delegatePattern: false
+useEnumCaseInsensitive: false
+additionalModelTypeAnnotations: |
+  @lombok.Builder
+  @lombok.extern.jackson.Jacksonized
+configOptions:
+  sourceFolder: src/main/java
+  serializableModel: true
+  useTags: true
+  interfaceOnly: true
+  delegatePattern: false
+  useSpringBoot3: true
+  documentationProvider: springdoc
+  openApiNullable: false
+  additionalModelTypeAnnotations: "@lombok.Builder\n@lombok.extern.jackson.Jacksonized"

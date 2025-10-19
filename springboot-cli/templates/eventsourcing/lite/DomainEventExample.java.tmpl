@@ -1,0 +1,43 @@
+package ${PACKAGE}.domain.event;
+
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * Example domain event for lightweight event-driven architecture.
+ *
+ * <p>Simple record-based events that are published via Spring's ApplicationEventPublisher.
+ * Events are automatically persisted in outbox table for reliability.
+ *
+ * <p>Usage:
+ * <pre>{@code
+ * @Service
+ * public class OrderService {
+ *   private final ApplicationEventPublisher eventPublisher;
+ *
+ *   public Order createOrder(CreateOrderCommand command) {
+ *     Order order = Order.create(command.customerId(), command.items());
+ *     orderRepository.save(order);
+ *
+ *     // Publish event
+ *     eventPublisher.publishEvent(
+ *       new OrderCreatedEvent(order.getId(), order.getCustomerId(), order.getTotalAmount())
+ *     );
+ *
+ *     return order;
+ *   }
+ * }
+ * }</pre>
+ */
+public record OrderCreatedEvent(
+    UUID eventId,
+    UUID orderId,
+    UUID customerId,
+    java.math.BigDecimal totalAmount,
+    Instant occurredAt
+) {
+
+  public OrderCreatedEvent(UUID orderId, UUID customerId, java.math.BigDecimal totalAmount) {
+    this(UUID.randomUUID(), orderId, customerId, totalAmount, Instant.now());
+  }
+}

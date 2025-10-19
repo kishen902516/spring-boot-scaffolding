@@ -1,0 +1,22 @@
+package ${PACKAGE}.infrastructure.config;
+
+import org.springframework.modulith.events.config.EnableEventExternalization;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
+
+/**
+ * Configuration for lightweight event-driven architecture using Spring Modulith.
+ *
+ * <p>Features:
+ * - Asynchronous event processing
+ * - Transactional outbox pattern (events persisted with data changes)
+ * - Automatic retry on failure
+ * - Event externalization (publish to message broker)
+ */
+@Configuration
+@EnableAsync
+@EnableEventExternalization
+public class EventPublisherConfig {
+  // Spring Modulith auto-configures event publication registry
+  // Events are stored in database and published reliably
+}

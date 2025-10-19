@@ -1,0 +1,96 @@
+package ${PACKAGE}.application.usecase;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import ${PACKAGE}.domain.model.entity.${ENTITY};
+import ${PACKAGE}.domain.port.output.${ENTITY}Repository;
+import ${PACKAGE}.infrastructure.adapter.observability.TelemetryService;
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+/**
+ * Unit tests for ${USE_CASE}.
+ *
+ * <p>Tests focus on business logic in isolation using mocks.
+ * Following the Given-When-Then pattern.
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("${USE_CASE} Unit Tests")
+class ${USE_CASE}Test {
+
+  @Mock
+  private ${ENTITY}Repository repository;
+
+  @Mock
+  private TelemetryService telemetry;
+
+  @InjectMocks
+  private ${USE_CASE} useCase;
+
+  private UUID testId;
+
+  @BeforeEach
+  void setUp() {
+    testId = UUID.randomUUID();
+  }
+
+  @Test
+  @DisplayName("Should successfully execute use case with valid input")
+  void shouldExecuteSuccessfully() {
+    // Given
+    ${ENTITY} expected${ENTITY} = create${ENTITY}();
+    when(repository.save(any(${ENTITY}.class))).thenReturn(expected${ENTITY});
+
+    // When
+    ${ENTITY} result = useCase.execute(/* command parameters */);
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getId()).isEqualTo(expected${ENTITY}.getId());
+
+    verify(repository).save(any(${ENTITY}.class));
+    verify(telemetry).trackEvent(eq("${ENTITY}Created"), any(), any());
+  }
+
+  @Test
+  @DisplayName("Should throw exception when input is invalid")
+  void shouldThrowExceptionWhenInputInvalid() {
+    // Given - invalid input
+
+    // When & Then
+    assertThatThrownBy(() -> useCase.execute(/* invalid parameters */))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Invalid input");
+
+    verify(repository, never()).save(any());
+    verify(telemetry, never()).trackEvent(anyString(), any(), any());
+  }
+
+  @Test
+  @DisplayName("Should handle repository exception gracefully")
+  void shouldHandleRepositoryException() {
+    // Given
+    when(repository.save(any())).thenThrow(new RuntimeException("Database error"));
+
+    // When & Then
+    assertThatThrownBy(() -> useCase.execute(/* parameters */))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Database error");
+
+    verify(repository).save(any(${ENTITY}.class));
+  }
+
+  private ${ENTITY} create${ENTITY}() {
+    // Create and return test entity
+    return null; // TODO: Implement
+  }
+}

@@ -1,0 +1,82 @@
+package ${PACKAGE}.application.eventhandler;
+
+import ${PACKAGE}.domain.event.OrderCreatedEvent;
+import ${PACKAGE}.infrastructure.adapter.observability.TelemetryService;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.modulith.events.ApplicationModuleListener;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Example event handler for lightweight event-driven architecture.
+ *
+ * <p>Handles domain events asynchronously and transactionally.
+ * Uses @ApplicationModuleListener for automatic retry and error handling.
+ *
+ * <p>Features:
+ * - Asynchronous processing (non-blocking)
+ * - Transactional (changes are atomic)
+ * - Automatic retry on failure
+ * - Events processed exactly once
+ */
+@Component
+public class OrderEventHandler {
+
+  private static final Logger logger = LoggerFactory.getLogger(OrderEventHandler.class);
+
+  private final TelemetryService telemetry;
+  // Add other dependencies as needed
+
+  public OrderEventHandler(TelemetryService telemetry) {
+    this.telemetry = telemetry;
+  }
+
+  /**
+   * Handles OrderCreatedEvent.
+   *
+   * <p>This method is called asynchronously when an OrderCreatedEvent is published.
+   * It runs in a separate transaction from the event publisher.
+   *
+   * @param event the order created event
+   */
+  @ApplicationModuleListener
+  @Transactional
+  public void handleOrderCreated(OrderCreatedEvent event) {
+    logger.info("Processing OrderCreatedEvent for order: {}", event.orderId());
+
+    try {
+      // Handle the event
+      // Examples:
+      // - Update read model
+      // - Send notification
+      // - Trigger downstream process
+      // - Update analytics
+
+      telemetry.trackEvent("OrderEventProcessed",
+          Map.of("orderId", event.orderId().toString(),
+                 "customerId", event.customerId().toString()),
+          Map.of("totalAmount", event.totalAmount().doubleValue()));
+
+      logger.info("Successfully processed OrderCreatedEvent for order: {}", event.orderId());
+
+    } catch (Exception e) {
+      logger.error("Failed to process OrderCreatedEvent for order: {}", event.orderId(), e);
+      telemetry.trackException(e, Map.of("orderId", event.orderId().toString()));
+      throw e; // Rethrow to trigger retry
+    }
+  }
+
+  /**
+   * Example: Multiple event types can be handled in one class.
+   */
+  /*
+  @ApplicationModuleListener
+  @Transactional
+  public void handleOrderCompleted(OrderCompletedEvent event) {
+    logger.info("Processing OrderCompletedEvent for order: {}", event.orderId());
+    // Handle order completion
+  }
+  */
+}

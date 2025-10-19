@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+  <springProperty scope="context" name="appName" source="spring.application.name"/>
+  <springProperty scope="context" name="appEnv" source="spring.profiles.active" defaultValue="local"/>
+
+  <!-- Console Appender with JSON format -->
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <customFields>{"application":"${appName}","environment":"${appEnv}"}</customFields>
+      <fieldNames>
+        <timestamp>timestamp</timestamp>
+        <version>version</version>
+        <message>message</message>
+        <logger>logger</logger>
+        <thread>thread</thread>
+        <level>level</level>
+        <levelValue>levelValue</levelValue>
+      </fieldNames>
+      <includeMdcKeyName>traceId</includeMdcKeyName>
+      <includeMdcKeyName>spanId</includeMdcKeyName>
+      <includeMdcKeyName>userId</includeMdcKeyName>
+      <includeMdcKeyName>requestId</includeMdcKeyName>
+    </encoder>
+  </appender>
+
+  <!-- Application Insights Appender -->
+  <appender name="APPLICATION_INSIGHTS" class="com.microsoft.applicationinsights.logback.ApplicationInsightsAppender">
+    <instrumentationKey>${APPLICATIONINSIGHTS_CONNECTION_STRING}</instrumentationKey>
+  </appender>
+
+  <!-- Async wrapper for better performance -->
+  <appender name="ASYNC_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="CONSOLE"/>
+    <queueSize>512</queueSize>
+    <discardingThreshold>0</discardingThreshold>
+  </appender>
+
+  <appender name="ASYNC_APP_INSIGHTS" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="APPLICATION_INSIGHTS"/>
+    <queueSize>512</queueSize>
+    <discardingThreshold>0</discardingThreshold>
+  </appender>
+
+  <!-- Root logger -->
+  <root level="INFO">
+    <appender-ref ref="ASYNC_CONSOLE"/>
+    <appender-ref ref="ASYNC_APP_INSIGHTS"/>
+  </root>
+
+  <!-- Application logger -->
+  <logger name="${PACKAGE}" level="DEBUG" additivity="false">
+    <appender-ref ref="ASYNC_CONSOLE"/>
+    <appender-ref ref="ASYNC_APP_INSIGHTS"/>
+  </logger>
+
+  <!-- Spring Boot logger -->
+  <logger name="org.springframework" level="INFO"/>
+  <logger name="org.springframework.web" level="DEBUG"/>
+
+  <!-- Hibernate logger -->
+  <logger name="org.hibernate" level="INFO"/>
+  <logger name="org.hibernate.SQL" level="DEBUG"/>
+  <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+
+  <!-- MongoDB logger -->
+  <logger name="org.springframework.data.mongodb" level="DEBUG"/>
+
+  <!-- Application Insights logger -->
+  <logger name="com.microsoft.applicationinsights" level="WARN"/>
+</configuration>

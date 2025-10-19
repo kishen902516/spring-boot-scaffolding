@@ -1,0 +1,128 @@
+package ${PACKAGE}.infrastructure.adapter.persistence;
+
+import static org.assertj.core.api.Assertions.*;
+
+import ${PACKAGE}.domain.model.entity.${ENTITY};
+import java.util.Optional;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
+
+/**
+ * Integration tests for ${ENTITY}Repository.
+ *
+ * <p>Tests repository layer with actual database:
+ * - CRUD operations
+ * - Query methods
+ * - Transaction handling
+ * - Database constraints
+ *
+ * <p>Uses H2 in-memory database for fast, isolated tests.
+ */
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = Replace.ANY)
+@ActiveProfiles("test")
+@DisplayName("${ENTITY}Repository Integration Tests")
+class ${ENTITY}RepositoryIntegrationTest {
+
+  @Autowired
+  private ${ENTITY}Repository repository;
+
+  private UUID testId;
+
+  @BeforeEach
+  void setUp() {
+    testId = UUID.randomUUID();
+    repository.deleteAll();
+  }
+
+  @Test
+  @DisplayName("Should save and retrieve ${ENTITY}")
+  void shouldSaveAndRetrieve() {
+    // Given
+    ${ENTITY} entity = create${ENTITY}();
+
+    // When
+    ${ENTITY} saved = repository.save(entity);
+
+    // Then
+    assertThat(saved.getId()).isNotNull();
+
+    Optional<${ENTITY}> retrieved = repository.findById(saved.getId());
+    assertThat(retrieved).isPresent();
+    assertThat(retrieved.get().getId()).isEqualTo(saved.getId());
+  }
+
+  @Test
+  @DisplayName("Should update ${ENTITY}")
+  void shouldUpdate() {
+    // Given
+    ${ENTITY} entity = create${ENTITY}();
+    ${ENTITY} saved = repository.save(entity);
+
+    // When - update entity
+    // saved.setField("updated value");
+    ${ENTITY} updated = repository.save(saved);
+
+    // Then
+    Optional<${ENTITY}> retrieved = repository.findById(saved.getId());
+    assertThat(retrieved).isPresent();
+    // assertThat(retrieved.get().getField()).isEqualTo("updated value");
+  }
+
+  @Test
+  @DisplayName("Should delete ${ENTITY}")
+  void shouldDelete() {
+    // Given
+    ${ENTITY} entity = create${ENTITY}();
+    ${ENTITY} saved = repository.save(entity);
+
+    // When
+    repository.deleteById(saved.getId());
+
+    // Then
+    Optional<${ENTITY}> retrieved = repository.findById(saved.getId());
+    assertThat(retrieved).isEmpty();
+  }
+
+  @Test
+  @DisplayName("Should find all ${ENTITY}s")
+  void shouldFindAll() {
+    // Given
+    repository.save(create${ENTITY}());
+    repository.save(create${ENTITY}());
+    repository.save(create${ENTITY}());
+
+    // When
+    var all = repository.findAll();
+
+    // Then
+    assertThat(all).hasSize(3);
+  }
+
+  @Test
+  @DisplayName("Should handle unique constraint violation")
+  void shouldHandleUniqueConstraintViolation() {
+    // Given
+    ${ENTITY} entity1 = create${ENTITY}();
+    repository.save(entity1);
+
+    // When & Then - try to save duplicate
+    // assertThatThrownBy(() -> {
+    //   ${ENTITY} entity2 = create${ENTITY}();
+    //   // set same unique field
+    //   repository.save(entity2);
+    // }).isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  private ${ENTITY} create${ENTITY}() {
+    // Create and return test entity
+    return null; // TODO: Implement
+  }
+}

@@ -1,0 +1,70 @@
+package ${PACKAGE}.infrastructure.adapter.camel;
+
+import org.apache.camel.LoggingLevel;
+import org.apache.camel.builder.RouteBuilder;
+import org.springframework.stereotype.Component;
+
+/**
+ * Camel route with content-based routing.
+ *
+ * <p>Route flow:
+ * 1. Receive message from queue
+ * 2. Route based on message content/headers
+ * 3. Process differently per route
+ * 4. Log and acknowledge
+ *
+ * <p>Enterprise Integration Patterns used:
+ * - Content-Based Router
+ * - Message Filter
+ * - Splitter
+ */
+@Component
+public class ContentBasedRoute extends RouteBuilder {
+
+  @Override
+  public void configure() throws Exception {
+    // Main router
+    from("kafka:${INPUT_TOPIC}?brokers={{kafka.bootstrap-servers}}")
+        .routeId("content-based-router")
+        .log(LoggingLevel.INFO, "Received message: ${body}")
+
+        .choice()
+            // Route for type A
+            .when(jsonpath("$[?(@.type == 'TypeA')]"))
+                .log(LoggingLevel.INFO, "Processing Type A message")
+                .to("direct:process-type-a")
+
+            // Route for type B
+            .when(jsonpath("$[?(@.type == 'TypeB')]"))
+                .log(LoggingLevel.INFO, "Processing Type B message")
+                .to("direct:process-type-b")
+
+            // Route for priority messages
+            .when(header("priority").isEqualTo("high"))
+                .log(LoggingLevel.INFO, "Processing high priority message")
+                .to("direct:process-high-priority")
+
+            // Default route
+            .otherwise()
+                .log(LoggingLevel.WARN, "Unknown message type, using default processing")
+                .to("direct:process-default")
+        .end();
+
+    // Sub-routes
+    from("direct:process-type-a")
+        .log(LoggingLevel.INFO, "Type A processing")
+        .to("kafka:type-a-topic?brokers={{kafka.bootstrap-servers}}");
+
+    from("direct:process-type-b")
+        .log(LoggingLevel.INFO, "Type B processing")
+        .to("kafka:type-b-topic?brokers={{kafka.bootstrap-servers}}");
+
+    from("direct:process-high-priority")
+        .log(LoggingLevel.INFO, "High priority processing")
+        .to("kafka:priority-topic?brokers={{kafka.bootstrap-servers}}");
+
+    from("direct:process-default")
+        .log(LoggingLevel.INFO, "Default processing")
+        .to("kafka:default-topic?brokers={{kafka.bootstrap-servers}}");
+  }
+}

@@ -1,0 +1,9 @@
+# Don't overwrite these files on regeneration
+pom.xml
+README.md
+src/main/resources/**
+src/test/**
+
+# Don't generate unnecessary files
+.openapi-generator-ignore
+.openapi-generator/**

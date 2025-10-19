@@ -1,0 +1,42 @@
+# Application Insights Configuration
+# Add this to your application.yml or application-{profile}.yml
+
+azure:
+  application-insights:
+    enabled: true
+    connection-string: ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+    web:
+      enable-W3C-distributed-tracing: true
+    customDimensions:
+      environment: ${spring.profiles.active:local}
+      service: ${spring.application.name}
+    sampling:
+      percentage: 100  # 100% sampling for dev, reduce for production (e.g., 10-20%)
+    performance-counters:
+      enabled: true
+    heartbeat:
+      enabled: true
+      interval: 900  # 15 minutes
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    ${PACKAGE}: DEBUG
+    com.microsoft.applicationinsights: WARN

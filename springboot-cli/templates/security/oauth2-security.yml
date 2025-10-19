@@ -1,0 +1,39 @@
+# OAuth2 + JWT Security Configuration
+# Add this to your application.yml
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Azure AD example
+          issuer-uri: ${OAUTH2_ISSUER_URI}  # e.g., https://login.microsoftonline.com/{tenant-id}/v2.0
+          jwk-set-uri: ${OAUTH2_JWK_SET_URI}  # e.g., https://login.microsoftonline.com/{tenant-id}/discovery/v2.0/keys
+
+          # Auth0 example (alternative)
+          # issuer-uri: https://${AUTH0_DOMAIN}/
+          # audiences: ${AUTH0_AUDIENCE}
+
+          # Okta example (alternative)
+          # issuer-uri: https://${OKTA_DOMAIN}/oauth2/default
+
+# Logging for security
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+
+---
+# Test profile - disable security
+spring:
+  config:
+    activate:
+      on-profile: test
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080  # Dummy value for tests
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration

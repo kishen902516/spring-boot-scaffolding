@@ -1,0 +1,53 @@
+package ${PACKAGE}.infrastructure.adapter.camel;
+
+import org.apache.camel.LoggingLevel;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.model.dataformat.JsonLibrary;
+import org.springframework.stereotype.Component;
+
+/**
+ * Camel route for processing files and sending to message queue.
+ *
+ * <p>Route flow:
+ * 1. Watch directory for new files
+ * 2. Read file content
+ * 3. Transform to domain object
+ * 4. Send to Kafka topic
+ * 5. Move processed file to archive
+ * 6. Handle errors by moving to error directory
+ *
+ * <p>Enterprise Integration Patterns used:
+ * - File Poller
+ * - Message Translator
+ * - Dead Letter Channel
+ */
+@Component
+public class FileToQueueRoute extends RouteBuilder {
+
+  @Override
+  public void configure() throws Exception {
+    // Error handling
+    onException(Exception.class)
+        .handled(true)
+        .log(LoggingLevel.ERROR, "Error processing file: ${exception.message}")
+        .to("file:///data/error")
+        .end();
+
+    // Main route
+    from("file:///data/input?delete=false&move=../archive/${date:now:yyyyMMdd}/${file:name}")
+        .routeId("file-to-kafka")
+        .log(LoggingLevel.INFO, "Processing file: ${header.CamelFileName}")
+
+        // Transform file content to JSON
+        .unmarshal().json(JsonLibrary.Jackson, ${ENTITY}.class)
+
+        // Enrich with metadata
+        .setHeader("source", constant("file"))
+        .setHeader("processedAt", simple("${date:now:yyyy-MM-dd'T'HH:mm:ss}"))
+
+        // Send to Kafka
+        .to("kafka:${TOPIC_NAME}?brokers={{kafka.bootstrap-servers}}")
+
+        .log(LoggingLevel.INFO, "File processed successfully: ${header.CamelFileName}");
+  }
+}

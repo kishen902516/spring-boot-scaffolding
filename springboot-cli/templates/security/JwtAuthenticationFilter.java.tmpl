@@ -1,0 +1,63 @@
+package ${PACKAGE}.infrastructure.security;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+
+/**
+ * Filter to enrich logging MDC with authentication information.
+ *
+ * <p>This filter:
+ * - Extracts user information from authenticated principal
+ * - Adds userId to MDC for correlation in logs
+ * - Tracks authenticated vs anonymous requests
+ *
+ * <p>MDC values are automatically included in structured logs.
+ */
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+  private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
+  @Override
+  protected void doFilterInternal(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      FilterChain filterChain) throws ServletException, IOException {
+
+    try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+      if (authentication != null && authentication.isAuthenticated()) {
+        String userId = authentication.getName();
+
+        // Add userId to MDC for correlation
+        MDC.put("userId", userId);
+
+        // Log authentication details (debug level)
+        if (logger.isDebugEnabled()) {
+          logger.debug("Authenticated request from user: {}", userId);
+        }
+      } else {
+        // Anonymous request
+        MDC.put("userId", "anonymous");
+      }
+
+      filterChain.doFilter(request, response);
+
+    } finally {
+      // Clean up MDC
+      MDC.remove("userId");
+    }
+  }
+}

@@ -1,0 +1,132 @@
+package ${PACKAGE}.api.controller;
+
+import ${PACKAGE}.infrastructure.security.SecurityUtils;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+/**
+ * Example controller demonstrating security features.
+ *
+ * <p>Shows different security patterns:
+ * - Public endpoints (no authentication)
+ * - Authenticated endpoints (any valid token)
+ * - Role-based endpoints (specific roles required)
+ * - Accessing user information
+ */
+@RestController
+@RequestMapping("/api/examples")
+public class ExampleSecuredController {
+
+  /**
+   * Public endpoint - no authentication required.
+   */
+  @GetMapping("/public")
+  public ResponseEntity<Map<String, String>> publicEndpoint() {
+    return ResponseEntity.ok(Map.of(
+        "message", "This is a public endpoint",
+        "access", "no authentication required"
+    ));
+  }
+
+  /**
+   * Authenticated endpoint - any valid JWT token required.
+   */
+  @GetMapping("/authenticated")
+  public ResponseEntity<Map<String, String>> authenticatedEndpoint(Authentication authentication) {
+    String userId = authentication.getName();
+
+    return ResponseEntity.ok(Map.of(
+        "message", "This is an authenticated endpoint",
+        "userId", userId,
+        "access", "any authenticated user"
+    ));
+  }
+
+  /**
+   * Role-based endpoint - USER role required.
+   */
+  @GetMapping("/user-only")
+  @PreAuthorize("hasRole('USER')")
+  public ResponseEntity<Map<String, String>> userOnlyEndpoint() {
+    String userId = SecurityUtils.getCurrentUserId().orElse("unknown");
+
+    return ResponseEntity.ok(Map.of(
+        "message", "This endpoint requires USER role",
+        "userId", userId,
+        "access", "users with ROLE_USER"
+    ));
+  }
+
+  /**
+   * Role-based endpoint - ADMIN role required.
+   */
+  @GetMapping("/admin-only")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<Map<String, String>> adminOnlyEndpoint() {
+    String userId = SecurityUtils.getCurrentUserId().orElse("unknown");
+
+    return ResponseEntity.ok(Map.of(
+        "message", "This endpoint requires ADMIN role",
+        "userId", userId,
+        "access", "users with ROLE_ADMIN"
+    ));
+  }
+
+  /**
+   * Multiple roles - requires USER or ADMIN role.
+   */
+  @GetMapping("/user-or-admin")
+  @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+  public ResponseEntity<Map<String, String>> userOrAdminEndpoint() {
+    String userId = SecurityUtils.getCurrentUserId().orElse("unknown");
+    boolean isAdmin = SecurityUtils.hasRole("ADMIN");
+
+    return ResponseEntity.ok(Map.of(
+        "message", "This endpoint requires USER or ADMIN role",
+        "userId", userId,
+        "isAdmin", String.valueOf(isAdmin),
+        "access", "users with ROLE_USER or ROLE_ADMIN"
+    ));
+  }
+
+  /**
+   * Complex authorization - SpEL expression.
+   */
+  @PostMapping("/resources/{id}")
+  @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #id == authentication.name)")
+  public ResponseEntity<Map<String, String>> complexAuthorizationEndpoint(
+      @PathVariable String id,
+      @RequestBody Map<String, Object> data) {
+
+    return ResponseEntity.ok(Map.of(
+        "message", "Complex authorization example",
+        "resourceId", id,
+        "access", "admins or resource owner"
+    ));
+  }
+
+  /**
+   * Get current user information.
+   */
+  @GetMapping("/me")
+  public ResponseEntity<Map<String, Object>> getCurrentUser(Authentication authentication) {
+    String userId = SecurityUtils.getCurrentUserId().orElse("anonymous");
+    var authorities = SecurityUtils.getCurrentUserAuthorities();
+
+    // Extract custom JWT claims
+    var email = SecurityUtils.<String>getJwtClaim("email").orElse(null);
+    var name = SecurityUtils.<String>getJwtClaim("name").orElse(null);
+
+    return ResponseEntity.ok(Map.of(
+        "userId", userId,
+        "email", email != null ? email : "not available",
+        "name", name != null ? name : "not available",
+        "authorities", authorities != null ? authorities : "none",
+        "isAuthenticated", SecurityUtils.isAuthenticated()
+    ));
+  }
+}
