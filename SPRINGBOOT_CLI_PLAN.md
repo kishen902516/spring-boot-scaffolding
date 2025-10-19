@@ -1979,11 +1979,11 @@ docker run -p 8080:8080 \
 ## 18. Implementation Roadmap
 
 ### Phase 1: CLI Foundation (Week 1)
-- [ ] Create CLI directory structure
-- [ ] Implement bash/PowerShell script framework
-- [ ] Create base project templates
-- [ ] Implement `init` command
-- [ ] Test project generation
+- [x] Create CLI directory structure
+- [x] Implement bash/PowerShell script framework
+- [x] Create base project templates
+- [x] Implement `init` command
+- [x] Test project generation
 
 ### Phase 2: Clean Architecture Templates (Week 2)
 - [ ] Create domain layer templates
