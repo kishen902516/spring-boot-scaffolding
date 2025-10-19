@@ -1,0 +1,94 @@
+package ${PACKAGE}.infrastructure.adapter.persistence.eventstore;
+
+import jakarta.persistence.*;
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * JPA entity for storing domain events.
+ *
+ * <p>Schema design:
+ * - Composite index on (aggregateId, version) for fast event replay
+ * - Index on eventType for querying events by type
+ * - Index on timestamp for temporal queries
+ */
+@Entity
+@Table(
+    name = "domain_events",
+    indexes = {
+        @Index(name = "idx_aggregate_version", columnList = "aggregate_id,version"),
+        @Index(name = "idx_event_type", columnList = "event_type"),
+        @Index(name = "idx_timestamp", columnList = "timestamp")
+    }
+)
+public class EventEntity {
+
+  @Id
+  @Column(name = "event_id", nullable = false, updatable = false)
+  private UUID eventId;
+
+  @Column(name = "aggregate_id", nullable = false, updatable = false)
+  private UUID aggregateId;
+
+  @Column(name = "version", nullable = false, updatable = false)
+  private Long version;
+
+  @Column(name = "event_type", nullable = false, updatable = false)
+  private String eventType;
+
+  @Column(name = "event_data", nullable = false, updatable = false, columnDefinition = "TEXT")
+  private String eventData;
+
+  @Column(name = "timestamp", nullable = false, updatable = false)
+  private Instant timestamp;
+
+  // Getters and Setters
+
+  public UUID getEventId() {
+    return eventId;
+  }
+
+  public void setEventId(UUID eventId) {
+    this.eventId = eventId;
+  }
+
+  public UUID getAggregateId() {
+    return aggregateId;
+  }
+
+  public void setAggregateId(UUID aggregateId) {
+    this.aggregateId = aggregateId;
+  }
+
+  public Long getVersion() {
+    return version;
+  }
+
+  public void setVersion(Long version) {
+    this.version = version;
+  }
+
+  public String getEventType() {
+    return eventType;
+  }
+
+  public void setEventType(String eventType) {
+    this.eventType = eventType;
+  }
+
+  public String getEventData() {
+    return eventData;
+  }
+
+  public void setEventData(String eventData) {
+    this.eventData = eventData;
+  }
+
+  public Instant getTimestamp() {
+    return timestamp;
+  }
+
+  public void setTimestamp(Instant timestamp) {
+    this.timestamp = timestamp;
+  }
+}

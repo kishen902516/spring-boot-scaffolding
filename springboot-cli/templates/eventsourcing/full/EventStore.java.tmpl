@@ -1,0 +1,50 @@
+package ${PACKAGE}.domain.port.output;
+
+import ${PACKAGE}.domain.event.DomainEvent;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Event Store interface for persisting and retrieving domain events.
+ *
+ * <p>The Event Store is the single source of truth for aggregate state.
+ * Aggregates are reconstructed by replaying all their events.
+ */
+public interface EventStore {
+
+  /**
+   * Saves events for an aggregate.
+   *
+   * @param aggregateId the aggregate ID
+   * @param events the events to save
+   * @param expectedVersion the expected current version (for optimistic locking)
+   * @throws ConcurrencyException if version doesn't match
+   */
+  void saveEvents(UUID aggregateId, List<DomainEvent> events, long expectedVersion);
+
+  /**
+   * Gets all events for an aggregate.
+   *
+   * @param aggregateId the aggregate ID
+   * @return list of events in order
+   */
+  List<DomainEvent> getEvents(UUID aggregateId);
+
+  /**
+   * Gets events for an aggregate starting from a specific version.
+   *
+   * @param aggregateId the aggregate ID
+   * @param fromVersion the starting version (exclusive)
+   * @return list of events in order
+   */
+  List<DomainEvent> getEvents(UUID aggregateId, long fromVersion);
+
+  /**
+   * Gets all events of a specific type.
+   *
+   * @param eventType the event type class
+   * @param <T> the event type
+   * @return list of events
+   */
+  <T extends DomainEvent> List<T> getEventsByType(Class<T> eventType);
+}

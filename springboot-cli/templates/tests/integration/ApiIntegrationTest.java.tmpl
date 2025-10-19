@@ -1,0 +1,193 @@
+package ${PACKAGE}.api.controller;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
+
+import io.restassured.http.ContentType;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.context.ActiveProfiles;
+
+/**
+ * Integration tests for ${ENTITY} API endpoints.
+ *
+ * <p>Tests the complete API layer including:
+ * - Request/response serialization
+ * - HTTP status codes
+ * - Error handling
+ * - Controller → Use Case → Repository flow
+ *
+ * <p>Uses REST Assured for readable API tests.
+ */
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
+@DisplayName("${ENTITY} API Integration Tests")
+class ${ENTITY}ApiIntegrationTest {
+
+  @LocalServerPort
+  private int port;
+
+  @BeforeEach
+  void setUp() {
+    // Setup test data if needed
+  }
+
+  @Test
+  @DisplayName("Should create ${ENTITY} successfully")
+  void shouldCreate${ENTITY}() {
+    String requestBody = """
+        {
+          "field1": "value1",
+          "field2": "value2"
+        }
+        """;
+
+    given()
+        .port(port)
+        .contentType(ContentType.JSON)
+        .body(requestBody)
+    .when()
+        .post("/api/${ENTITY_LOWER}s")
+    .then()
+        .statusCode(201)
+        .body("id", notNullValue())
+        .body("field1", equalTo("value1"))
+        .body("field2", equalTo("value2"));
+  }
+
+  @Test
+  @DisplayName("Should get ${ENTITY} by ID")
+  void shouldGet${ENTITY}ById() {
+    // Given - create a ${ENTITY}
+    String id = createTest${ENTITY}();
+
+    // When & Then
+    given()
+        .port(port)
+    .when()
+        .get("/api/${ENTITY_LOWER}s/{id}", id)
+    .then()
+        .statusCode(200)
+        .body("id", equalTo(id));
+  }
+
+  @Test
+  @DisplayName("Should return 404 when ${ENTITY} not found")
+  void shouldReturn404WhenNotFound() {
+    String nonExistentId = "00000000-0000-0000-0000-000000000000";
+
+    given()
+        .port(port)
+    .when()
+        .get("/api/${ENTITY_LOWER}s/{id}", nonExistentId)
+    .then()
+        .statusCode(404)
+        .body("message", containsString("not found"));
+  }
+
+  @Test
+  @DisplayName("Should return 400 for invalid request")
+  void shouldReturn400ForInvalidRequest() {
+    String invalidRequestBody = """
+        {
+          "field1": ""
+        }
+        """;
+
+    given()
+        .port(port)
+        .contentType(ContentType.JSON)
+        .body(invalidRequestBody)
+    .when()
+        .post("/api/${ENTITY_LOWER}s")
+    .then()
+        .statusCode(400)
+        .body("errors", not(empty()));
+  }
+
+  @Test
+  @DisplayName("Should list all ${ENTITY}s with pagination")
+  void shouldListAll${ENTITY}s() {
+    given()
+        .port(port)
+        .queryParam("page", 0)
+        .queryParam("size", 20)
+    .when()
+        .get("/api/${ENTITY_LOWER}s")
+    .then()
+        .statusCode(200)
+        .body("content", notNullValue())
+        .body("page.size", equalTo(20))
+        .body("page.number", equalTo(0));
+  }
+
+  @Test
+  @DisplayName("Should update ${ENTITY}")
+  void shouldUpdate${ENTITY}() {
+    // Given
+    String id = createTest${ENTITY}();
+    String updateBody = """
+        {
+          "field1": "updated value"
+        }
+        """;
+
+    // When & Then
+    given()
+        .port(port)
+        .contentType(ContentType.JSON)
+        .body(updateBody)
+    .when()
+        .put("/api/${ENTITY_LOWER}s/{id}", id)
+    .then()
+        .statusCode(200)
+        .body("field1", equalTo("updated value"));
+  }
+
+  @Test
+  @DisplayName("Should delete ${ENTITY}")
+  void shouldDelete${ENTITY}() {
+    // Given
+    String id = createTest${ENTITY}();
+
+    // When & Then
+    given()
+        .port(port)
+    .when()
+        .delete("/api/${ENTITY_LOWER}s/{id}", id)
+    .then()
+        .statusCode(204);
+
+    // Verify deletion
+    given()
+        .port(port)
+    .when()
+        .get("/api/${ENTITY_LOWER}s/{id}", id)
+    .then()
+        .statusCode(404);
+  }
+
+  private String createTest${ENTITY}() {
+    String requestBody = """
+        {
+          "field1": "test value",
+          "field2": "test value 2"
+        }
+        """;
+
+    return given()
+        .port(port)
+        .contentType(ContentType.JSON)
+        .body(requestBody)
+    .when()
+        .post("/api/${ENTITY_LOWER}s")
+    .then()
+        .statusCode(201)
+        .extract()
+        .path("id");
+  }
+}

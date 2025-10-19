@@ -1,0 +1,176 @@
+package ${PACKAGE}.infrastructure.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
+
+/**
+ * Security configuration for OAuth2 Resource Server with JWT.
+ *
+ * <p>This configuration:
+ * - Validates JWT tokens from the configured issuer
+ * - Extracts authorities/roles from JWT claims
+ * - Configures CORS for cross-origin requests
+ * - Secures endpoints with role-based access control
+ * - Disables CSRF for stateless REST APIs
+ * - Enables method-level security with @PreAuthorize
+ *
+ * <p>Usage in controllers:
+ * <pre>{@code
+ * @PreAuthorize("hasRole('USER')")
+ * public ResponseEntity<Order> getOrder(@PathVariable UUID id) {
+ *   // ...
+ * }
+ *
+ * @PreAuthorize("hasRole('ADMIN')")
+ * public ResponseEntity<Void> deleteOrder(@PathVariable UUID id) {
+ *   // ...
+ * }
+ * }</pre>
+ */
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
+
+  /**
+   * Configures the security filter chain.
+   *
+   * <p>Endpoint security:
+   * - Public: /actuator/health, /actuator/info, /swagger-ui/**, /v3/api-docs/**
+   * - Authenticated: All other endpoints
+   */
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .authorizeHttpRequests(auth -> auth
+            // Public endpoints
+            .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+
+            // OPTIONS requests for CORS preflight
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+            // All other endpoints require authentication
+            .anyRequest().authenticated()
+        )
+        // OAuth2 Resource Server with JWT
+        .oauth2ResourceServer(oauth2 -> oauth2
+            .jwt(jwt -> jwt
+                .jwtAuthenticationConverter(jwtAuthenticationConverter())
+            )
+        )
+        // Stateless session management
+        .sessionManagement(session -> session
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        )
+        // CORS configuration
+        .cors(cors -> cors
+            .configurationSource(corsConfigurationSource())
+        )
+        // Disable CSRF for stateless APIs
+        .csrf(AbstractHttpConfigurer::disable);
+
+    return http.build();
+  }
+
+  /**
+   * Converts JWT claims to Spring Security authorities.
+   *
+   * <p>Expected JWT structure:
+   * <pre>{@code
+   * {
+   *   "sub": "user@example.com",
+   *   "roles": ["USER", "ADMIN"],
+   *   "iss": "https://auth.example.com",
+   *   "exp": 1234567890
+   * }
+   * }</pre>
+   *
+   * <p>Roles are prefixed with "ROLE_" automatically.
+   */
+  @Bean
+  public JwtAuthenticationConverter jwtAuthenticationConverter() {
+    JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+
+    // Configure the claim name for roles (default: "scope")
+    grantedAuthoritiesConverter.setAuthoritiesClaimName("roles");
+
+    // Add "ROLE_" prefix to authorities
+    grantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
+
+    JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+    jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+
+    return jwtAuthenticationConverter;
+  }
+
+  /**
+   * CORS configuration for cross-origin requests.
+   *
+   * <p>Allows:
+   * - Specific origins (configure based on environment)
+   * - Common HTTP methods
+   * - Authorization headers
+   * - Credentials
+   */
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+
+    // Allow specific origins (configure per environment)
+    configuration.setAllowedOrigins(List.of(
+        "http://localhost:3000",  // React dev server
+        "http://localhost:4200",  // Angular dev server
+        "https://app.example.com"  // Production frontend
+    ));
+
+    // Or allow all origins (NOT recommended for production)
+    // configuration.setAllowedOriginPatterns(List.of("*"));
+
+    // Allowed methods
+    configuration.setAllowedMethods(List.of(
+        "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
+    ));
+
+    // Allowed headers
+    configuration.setAllowedHeaders(List.of(
+        "Authorization",
+        "Content-Type",
+        "X-Requested-With",
+        "Accept",
+        "Origin"
+    ));
+
+    // Expose headers
+    configuration.setExposedHeaders(List.of(
+        "X-Total-Count",
+        "X-Page-Number",
+        "X-Page-Size"
+    ));
+
+    // Allow credentials (cookies, authorization headers)
+    configuration.setAllowCredentials(true);
+
+    // Cache preflight response for 1 hour
+    configuration.setMaxAge(3600L);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+
+    return source;
+  }
+}

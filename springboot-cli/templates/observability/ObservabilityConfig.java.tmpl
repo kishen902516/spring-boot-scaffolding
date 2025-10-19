@@ -1,0 +1,47 @@
+package ${PACKAGE}.infrastructure.config;
+
+import com.microsoft.applicationinsights.TelemetryConfiguration;
+import com.microsoft.applicationinsights.telemetry.TelemetryContext;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+
+/**
+ * Configuration for Azure Application Insights observability.
+ *
+ * <p>This configuration sets up:
+ * - Custom dimensions for all telemetry
+ * - Cloud role name for service identification
+ * - Telemetry context enrichment
+ */
+@Configuration
+@Profile("!test")
+public class ObservabilityConfig {
+
+  @Value("${spring.application.name}")
+  private String applicationName;
+
+  @Value("${spring.profiles.active:default}")
+  private String activeProfile;
+
+  /**
+   * Configures Application Insights telemetry with custom properties.
+   *
+   * @param telemetryConfiguration the telemetry configuration
+   * @return the configured telemetry context
+   */
+  @Bean
+  public TelemetryContext telemetryContext(TelemetryConfiguration telemetryConfiguration) {
+    TelemetryContext context = telemetryConfiguration.getTelemetryContext();
+
+    // Set cloud role name for Application Map
+    context.getCloud().setRole(applicationName);
+
+    // Add custom dimensions to all telemetry
+    context.getProperties().put("service", applicationName);
+    context.getProperties().put("environment", activeProfile);
+
+    return context;
+  }
+}

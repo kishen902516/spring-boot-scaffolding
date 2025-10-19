@@ -1,0 +1,109 @@
+# Resilience4j Configuration
+# Add this to your application.yml
+
+resilience4j:
+  # Circuit Breaker Configuration
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        minimum-number-of-calls: 5
+        slow-call-duration-threshold: 3s
+        slow-call-rate-threshold: 50
+        record-exceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.client.ResourceAccessException
+    instances:
+      externalService:
+        base-config: default
+        sliding-window-size: 20
+        failure-rate-threshold: 40
+
+  # Retry Configuration
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 1s
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - java.net.ConnectException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+          - java.lang.IllegalStateException
+    instances:
+      externalService:
+        base-config: default
+        max-attempts: 4
+        wait-duration: 500ms
+
+  # Rate Limiter Configuration
+  ratelimiter:
+    configs:
+      default:
+        limit-for-period: 100
+        limit-refresh-period: 1s
+        timeout-duration: 0s
+    instances:
+      publicApi:
+        limit-for-period: 50
+        limit-refresh-period: 1s
+      adminApi:
+        limit-for-period: 200
+        limit-refresh-period: 1s
+
+  # Bulkhead Configuration (Concurrency Limiting)
+  bulkhead:
+    configs:
+      default:
+        max-concurrent-calls: 10
+        max-wait-duration: 100ms
+    instances:
+      heavyOperation:
+        max-concurrent-calls: 5
+        max-wait-duration: 500ms
+
+  # Thread Pool Bulkhead (for async operations)
+  thread-pool-bulkhead:
+    configs:
+      default:
+        max-thread-pool-size: 4
+        core-thread-pool-size: 2
+        queue-capacity: 100
+        keep-alive-duration: 20ms
+    instances:
+      asyncOperation:
+        max-thread-pool-size: 8
+        core-thread-pool-size: 4
+
+  # Time Limiter Configuration
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
+        cancel-running-future: true
+    instances:
+      externalService:
+        timeout-duration: 3s
+
+# Actuator endpoints for monitoring resilience
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+    ratelimiters:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,circuitbreakers,ratelimiters

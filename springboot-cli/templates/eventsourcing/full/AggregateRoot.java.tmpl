@@ -1,0 +1,99 @@
+package ${PACKAGE}.domain.model.aggregate;
+
+import ${PACKAGE}.domain.event.DomainEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Base class for aggregate roots in event sourcing.
+ *
+ * <p>Aggregate roots:
+ * - Track uncommitted events
+ * - Maintain version for optimistic locking
+ * - Apply events to rebuild state
+ * - Encapsulate business rules
+ *
+ * <p>Usage:
+ * <pre>{@code
+ * public class Order extends AggregateRoot {
+ *   private OrderStatus status;
+ *   private List<OrderItem> items;
+ *
+ *   public static Order create(UUID customerId, List<OrderItem> items) {
+ *     Order order = new Order();
+ *     order.applyEvent(new OrderCreatedEvent(UUID.randomUUID(), customerId, items));
+ *     return order;
+ *   }
+ *
+ *   @Override
+ *   protected void apply(DomainEvent event) {
+ *     if (event instanceof OrderCreatedEvent e) {
+ *       this.id = e.getAggregateId();
+ *       this.status = OrderStatus.CREATED;
+ *       this.items = e.getItems();
+ *     }
+ *   }
+ * }
+ * }</pre>
+ */
+public abstract class AggregateRoot {
+
+  protected UUID id;
+  protected long version;
+  private final List<DomainEvent> uncommittedEvents = new ArrayList<>();
+
+  /**
+   * Applies a new event and adds it to uncommitted events.
+   *
+   * @param event the domain event to apply
+   */
+  protected void applyEvent(DomainEvent event) {
+    apply(event);
+    uncommittedEvents.add(event);
+    version++;
+  }
+
+  /**
+   * Applies an event from history (during reconstruction).
+   *
+   * @param event the historical event
+   */
+  public void loadFromHistory(DomainEvent event) {
+    apply(event);
+    version++;
+  }
+
+  /**
+   * Applies the event to update aggregate state.
+   * Subclasses must implement this to handle specific events.
+   *
+   * @param event the event to apply
+   */
+  protected abstract void apply(DomainEvent event);
+
+  /**
+   * Gets uncommitted events and clears the list.
+   *
+   * @return list of uncommitted events
+   */
+  public List<DomainEvent> getUncommittedEvents() {
+    return Collections.unmodifiableList(uncommittedEvents);
+  }
+
+  /**
+   * Clears uncommitted events (after they've been persisted).
+   */
+  public void markEventsAsCommitted() {
+    uncommittedEvents.clear();
+  }
+
+  public UUID getId() {
+    return id;
+  }
+
+  public long getVersion() {
+    return version;
+  }
+}

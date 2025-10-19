@@ -1,0 +1,213 @@
+package ${PACKAGE}.infrastructure.adapter.observability;
+
+import com.microsoft.applicationinsights.TelemetryClient;
+import com.microsoft.applicationinsights.telemetry.Duration;
+import com.microsoft.applicationinsights.telemetry.SeverityLevel;
+import java.time.Instant;
+import java.util.Map;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Service;
+
+/**
+ * Service for tracking custom telemetry in Application Insights.
+ *
+ * <p>This service provides methods to:
+ * - Track custom business events
+ * - Track custom metrics
+ * - Track dependencies (external service calls)
+ * - Track exceptions with context
+ * - Track traces (debugging information)
+ *
+ * <p>Usage examples:
+ * <pre>{@code
+ * // Track business event
+ * telemetry.trackEvent("OrderProcessed",
+ *     Map.of("customerId", "123", "status", "completed"),
+ *     Map.of("orderValue", 99.99, "itemCount", 3.0)
+ * );
+ *
+ * // Track custom metric
+ * telemetry.trackMetric("order.processing.time", 150.0,
+ *     Map.of("paymentMethod", "credit-card")
+ * );
+ *
+ * // Track dependency
+ * telemetry.trackDependency("PaymentService", "POST /charge", 250, true);
+ *
+ * // Track exception
+ * telemetry.trackException(exception,
+ *     Map.of("orderId", orderId),
+ *     SeverityLevel.Error
+ * );
+ * }</pre>
+ */
+@Service
+@Profile("!test")
+public class TelemetryService {
+
+  private final TelemetryClient telemetryClient;
+
+  public TelemetryService(TelemetryClient telemetryClient) {
+    this.telemetryClient = telemetryClient;
+  }
+
+  /**
+   * Tracks a custom business event.
+   *
+   * @param name the event name
+   * @param properties custom string properties
+   * @param metrics custom numeric measurements
+   */
+  public void trackEvent(String name, Map<String, String> properties, Map<String, Double> metrics) {
+    telemetryClient.trackEvent(name, properties, metrics);
+  }
+
+  /**
+   * Tracks a custom business event with properties only.
+   *
+   * @param name the event name
+   * @param properties custom string properties
+   */
+  public void trackEvent(String name, Map<String, String> properties) {
+    telemetryClient.trackEvent(name, properties, null);
+  }
+
+  /**
+   * Tracks a custom business event with no additional data.
+   *
+   * @param name the event name
+   */
+  public void trackEvent(String name) {
+    telemetryClient.trackEvent(name);
+  }
+
+  /**
+   * Tracks a custom metric.
+   *
+   * @param name the metric name
+   * @param value the metric value
+   * @param properties optional dimensions for the metric
+   */
+  public void trackMetric(String name, double value, Map<String, String> properties) {
+    var metric = telemetryClient.getContext().getInstrumentation().newMetric(name, value);
+    if (properties != null) {
+      metric.getProperties().putAll(properties);
+    }
+    telemetryClient.trackMetric(metric);
+  }
+
+  /**
+   * Tracks a custom metric without properties.
+   *
+   * @param name the metric name
+   * @param value the metric value
+   */
+  public void trackMetric(String name, double value) {
+    trackMetric(name, value, null);
+  }
+
+  /**
+   * Tracks a dependency call (external service, database, etc.).
+   *
+   * @param dependencyName the name of the dependency (e.g., "PaymentService")
+   * @param commandName the command/operation (e.g., "POST /charge")
+   * @param durationMs the duration in milliseconds
+   * @param success whether the call was successful
+   */
+  public void trackDependency(
+      String dependencyName, String commandName, long durationMs, boolean success) {
+    telemetryClient.trackDependency(
+        dependencyName, commandName, new Duration(durationMs), success);
+  }
+
+  /**
+   * Tracks a dependency call with additional properties.
+   *
+   * @param dependencyName the name of the dependency
+   * @param commandName the command/operation
+   * @param startTime the start time of the call
+   * @param durationMs the duration in milliseconds
+   * @param success whether the call was successful
+   * @param properties additional properties
+   */
+  public void trackDependency(
+      String dependencyName,
+      String commandName,
+      Instant startTime,
+      long durationMs,
+      boolean success,
+      Map<String, String> properties) {
+    var dependency =
+        telemetryClient.getContext().getInstrumentation().newDependency(
+            dependencyName, commandName, new Duration(durationMs), success);
+    dependency.setTimestamp(java.util.Date.from(startTime));
+    if (properties != null) {
+      dependency.getProperties().putAll(properties);
+    }
+    telemetryClient.trackDependency(dependency);
+  }
+
+  /**
+   * Tracks an exception with context.
+   *
+   * @param exception the exception to track
+   * @param properties additional context properties
+   * @param severityLevel the severity level
+   */
+  public void trackException(
+      Exception exception, Map<String, String> properties, SeverityLevel severityLevel) {
+    var exceptionTelemetry = telemetryClient.getContext().getInstrumentation().newException(exception);
+    exceptionTelemetry.setSeverityLevel(severityLevel);
+    if (properties != null) {
+      exceptionTelemetry.getProperties().putAll(properties);
+    }
+    telemetryClient.trackException(exceptionTelemetry);
+  }
+
+  /**
+   * Tracks an exception with default severity (Error).
+   *
+   * @param exception the exception to track
+   * @param properties additional context properties
+   */
+  public void trackException(Exception exception, Map<String, String> properties) {
+    trackException(exception, properties, SeverityLevel.Error);
+  }
+
+  /**
+   * Tracks an exception without additional properties.
+   *
+   * @param exception the exception to track
+   */
+  public void trackException(Exception exception) {
+    telemetryClient.trackException(exception);
+  }
+
+  /**
+   * Tracks a trace message for debugging.
+   *
+   * @param message the trace message
+   * @param severityLevel the severity level
+   * @param properties additional properties
+   */
+  public void trackTrace(String message, SeverityLevel severityLevel, Map<String, String> properties) {
+    telemetryClient.trackTrace(message, severityLevel, properties);
+  }
+
+  /**
+   * Tracks a trace message with default severity (Information).
+   *
+   * @param message the trace message
+   */
+  public void trackTrace(String message) {
+    telemetryClient.trackTrace(message);
+  }
+
+  /**
+   * Flushes all pending telemetry to Application Insights.
+   * Useful before application shutdown.
+   */
+  public void flush() {
+    telemetryClient.flush();
+  }
+}

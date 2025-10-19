@@ -1,0 +1,68 @@
+package ${PACKAGE}.infrastructure.adapter.camel;
+
+import org.apache.camel.Exchange;
+import org.apache.camel.LoggingLevel;
+import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.model.dataformat.JsonLibrary;
+import org.springframework.stereotype.Component;
+
+/**
+ * Camel route for REST-to-REST integration with transformation.
+ *
+ * <p>Route flow:
+ * 1. Receive REST request
+ * 2. Transform request format
+ * 3. Call external REST API with circuit breaker
+ * 4. Transform response
+ * 5. Return to caller
+ *
+ * <p>Enterprise Integration Patterns used:
+ * - Message Translator
+ * - Content Enricher
+ * - Circuit Breaker
+ */
+@Component
+public class RestToRestRoute extends RouteBuilder {
+
+  @Override
+  public void configure() throws Exception {
+    // Error handling with circuit breaker
+    onException(Exception.class)
+        .handled(true)
+        .log(LoggingLevel.ERROR, "External service call failed: ${exception.message}")
+        .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(503))
+        .setBody(constant("{\"error\": \"Service temporarily unavailable\"}"))
+        .end();
+
+    // REST endpoint
+    from("direct:call-external-service")
+        .routeId("rest-to-rest")
+        .log(LoggingLevel.INFO, "Calling external service for: ${body}")
+
+        // Transform request
+        .marshal().json(JsonLibrary.Jackson)
+
+        // Call external service with circuit breaker
+        .circuitBreaker()
+            .resilience4jConfiguration()
+                .failureRateThreshold(50)
+                .waitDurationInOpenState(10000)
+                .slidingWindowSize(10)
+            .end()
+
+            .to("http://{{external.service.url}}/api/endpoint?" +
+                "httpMethod=POST&" +
+                "connectionTimeout=5000&" +
+                "socketTimeout=10000")
+
+            // Transform response
+            .unmarshal().json(JsonLibrary.Jackson)
+
+        .onFallback()
+            .log(LoggingLevel.WARN, "Circuit breaker triggered, using fallback")
+            .setBody(constant("{\"status\": \"unavailable\"}"))
+        .end()
+
+        .log(LoggingLevel.INFO, "External service call completed");
+  }
+}

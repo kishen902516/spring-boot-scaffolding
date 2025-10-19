@@ -1,0 +1,100 @@
+package ${PACKAGE}.contract.consumer;
+
+import au.com.dius.pact.consumer.dsl.PactDslJsonBody;
+import au.com.dius.pact.consumer.dsl.PactDslWithProvider;
+import au.com.dius.pact.consumer.junit5.PactConsumerTestExt;
+import au.com.dius.pact.consumer.junit5.PactTestFor;
+import au.com.dius.pact.core.model.PactSpecVersion;
+import au.com.dius.pact.core.model.V4Pact;
+import au.com.dius.pact.core.model.annotations.Pact;
+import static org.assertj.core.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.client.RestTemplate;
+
+/**
+ * Consumer contract tests using Pact.
+ *
+ * <p>Defines the contract expectations for external service (provider).
+ * This test generates a Pact file that the provider must satisfy.
+ */
+@SpringBootTest
+@ActiveProfiles("test")
+@ExtendWith(PactConsumerTestExt.class)
+@PactTestFor(providerName = "${EXTERNAL_SERVICE_NAME}", pactVersion = PactSpecVersion.V4)
+@DisplayName("${EXTERNAL_SERVICE_NAME} Consumer Contract Tests")
+class ${EXTERNAL_SERVICE_NAME}ConsumerContractTest {
+
+  /**
+   * Defines the contract: successful ${ENTITY} retrieval
+   */
+  @Pact(consumer = "${SERVICE_NAME}", provider = "${EXTERNAL_SERVICE_NAME}")
+  public V4Pact get${ENTITY}Pact(PactDslWithProvider builder) {
+    return builder
+        .given("${ENTITY_LOWER} exists with ID 123")
+        .uponReceiving("a request to get ${ENTITY}")
+          .path("/api/${ENTITY_LOWER}s/123")
+          .method("GET")
+        .willRespondWith()
+          .status(200)
+          .headers(java.util.Map.of("Content-Type", "application/json"))
+          .body(new PactDslJsonBody()
+              .uuid("id", "123e4567-e89b-12d3-a456-426614174000")
+              .stringType("field1", "value1")
+              .stringType("field2", "value2")
+          )
+        .toPact(V4Pact.class);
+  }
+
+  @Test
+  @PactTestFor(pactMethod = "get${ENTITY}Pact")
+  @DisplayName("Should get ${ENTITY} from external service")
+  void testGet${ENTITY}(au.com.dius.pact.consumer.dsl.MockServerConfig mockServer) {
+    // Given
+    RestTemplate restTemplate = new RestTemplate();
+    String url = mockServer.url() + "/api/${ENTITY_LOWER}s/123";
+
+    // When
+    var response = restTemplate.getForObject(url, java.util.Map.class);
+
+    // Then
+    assertThat(response).isNotNull();
+    assertThat(response.get("id")).isNotNull();
+    assertThat(response.get("field1")).isEqualTo("value1");
+  }
+
+  /**
+   * Defines the contract: ${ENTITY} not found
+   */
+  @Pact(consumer = "${SERVICE_NAME}", provider = "${EXTERNAL_SERVICE_NAME}")
+  public V4Pact get${ENTITY}NotFoundPact(PactDslWithProvider builder) {
+    return builder
+        .given("${ENTITY_LOWER} does not exist")
+        .uponReceiving("a request to get non-existent ${ENTITY}")
+          .path("/api/${ENTITY_LOWER}s/999")
+          .method("GET")
+        .willRespondWith()
+          .status(404)
+          .headers(java.util.Map.of("Content-Type", "application/json"))
+          .body(new PactDslJsonBody()
+              .stringType("message", "${ENTITY} not found")
+          )
+        .toPact(V4Pact.class);
+  }
+
+  @Test
+  @PactTestFor(pactMethod = "get${ENTITY}NotFoundPact")
+  @DisplayName("Should handle ${ENTITY} not found")
+  void testGet${ENTITY}NotFound(au.com.dius.pact.consumer.dsl.MockServerConfig mockServer) {
+    // Given
+    RestTemplate restTemplate = new RestTemplate();
+    String url = mockServer.url() + "/api/${ENTITY_LOWER}s/999";
+
+    // When & Then
+    assertThatThrownBy(() -> restTemplate.getForObject(url, java.util.Map.class))
+        .isInstanceOf(org.springframework.web.client.HttpClientErrorException.NotFound.class);
+  }
+}

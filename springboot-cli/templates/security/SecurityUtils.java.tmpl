@@ -1,0 +1,129 @@
+package ${PACKAGE}.infrastructure.security;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+
+import java.util.Collection;
+import java.util.Optional;
+
+/**
+ * Utility class for security-related operations.
+ *
+ * <p>Provides convenient methods to:
+ * - Get current user information
+ * - Check user roles
+ * - Extract JWT claims
+ */
+public final class SecurityUtils {
+
+  private SecurityUtils() {
+    // Utility class
+  }
+
+  /**
+   * Gets the current authenticated user's ID.
+   *
+   * @return the user ID, or empty if not authenticated
+   */
+  public static Optional<String> getCurrentUserId() {
+    return getAuthentication()
+        .map(Authentication::getName);
+  }
+
+  /**
+   * Gets the current authentication object.
+   *
+   * @return the authentication, or empty if not authenticated
+   */
+  public static Optional<Authentication> getAuthentication() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+    if (authentication != null && authentication.isAuthenticated()) {
+      return Optional.of(authentication);
+    }
+
+    return Optional.empty();
+  }
+
+  /**
+   * Gets the current user's authorities (roles).
+   *
+   * @return collection of authorities
+   */
+  public static Collection<? extends GrantedAuthority> getCurrentUserAuthorities() {
+    return getAuthentication()
+        .map(Authentication::getAuthorities)
+        .orElse(null);
+  }
+
+  /**
+   * Checks if the current user has a specific role.
+   *
+   * @param role the role to check (without ROLE_ prefix)
+   * @return true if user has the role
+   */
+  public static boolean hasRole(String role) {
+    return getAuthentication()
+        .map(auth -> auth.getAuthorities().stream()
+            .anyMatch(authority -> authority.getAuthority().equals("ROLE_" + role)))
+        .orElse(false);
+  }
+
+  /**
+   * Checks if the current user has any of the specified roles.
+   *
+   * @param roles the roles to check (without ROLE_ prefix)
+   * @return true if user has any of the roles
+   */
+  public static boolean hasAnyRole(String... roles) {
+    for (String role : roles) {
+      if (hasRole(role)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Gets the JWT token from the current authentication.
+   *
+   * @return the JWT, or empty if not available
+   */
+  public static Optional<Jwt> getCurrentJwt() {
+    return getAuthentication()
+        .filter(auth -> auth.getPrincipal() instanceof Jwt)
+        .map(auth -> (Jwt) auth.getPrincipal());
+  }
+
+  /**
+   * Gets a claim from the current JWT token.
+   *
+   * @param claimName the name of the claim
+   * @param <T> the type of the claim value
+   * @return the claim value, or empty if not available
+   */
+  public static <T> Optional<T> getJwtClaim(String claimName) {
+    return getCurrentJwt()
+        .map(jwt -> jwt.getClaim(claimName));
+  }
+
+  /**
+   * Checks if the current user is authenticated.
+   *
+   * @return true if authenticated
+   */
+  public static boolean isAuthenticated() {
+    return getAuthentication().isPresent();
+  }
+
+  /**
+   * Checks if the current user is anonymous (not authenticated).
+   *
+   * @return true if not authenticated
+   */
+  public static boolean isAnonymous() {
+    return !isAuthenticated();
+  }
+}

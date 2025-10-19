@@ -1,0 +1,152 @@
+package ${PACKAGE}.infrastructure.adapter.client;
+
+import ${PACKAGE}.infrastructure.adapter.observability.TelemetryService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+/**
+ * Example of a resilient external service client.
+ *
+ * <p>Demonstrates using Resilience4j patterns:
+ * - Circuit Breaker: Prevents cascading failures
+ * - Retry: Automatic retry with exponential backoff
+ * - Rate Limiter: Throttles requests
+ * - Bulkhead: Limits concurrent calls
+ * - Time Limiter: Prevents hanging requests
+ *
+ * <p>Usage:
+ * <pre>{@code
+ * @Autowired
+ * private ExampleResilientClient client;
+ *
+ * String result = client.callExternalService(requestData);
+ * }</pre>
+ */
+@Component
+public class ExampleResilientClient {
+
+  private static final Logger logger = LoggerFactory.getLogger(ExampleResilientClient.class);
+
+  private final RestTemplate restTemplate;
+  private final TelemetryService telemetry;
+
+  public ExampleResilientClient(RestTemplate restTemplate, TelemetryService telemetry) {
+    this.restTemplate = restTemplate;
+    this.telemetry = telemetry;
+  }
+
+  /**
+   * Example: Circuit Breaker only.
+   *
+   * <p>If 50% of calls fail within sliding window, circuit opens.
+   * Failed requests return fallback response immediately.
+   */
+  @CircuitBreaker(name = "externalService", fallbackMethod = "fallbackResponse")
+  public String callWithCircuitBreaker(String requestData) {
+    logger.info("Calling external service with circuit breaker");
+    long startTime = System.currentTimeMillis();
+
+    try {
+      String response = restTemplate.postForObject(
+          "https://api.example.com/endpoint",
+          requestData,
+          String.class);
+
+      long duration = System.currentTimeMillis() - startTime;
+      telemetry.trackDependency("ExternalService", "POST /endpoint", duration, true);
+
+      return response;
+    } catch (Exception e) {
+      long duration = System.currentTimeMillis() - startTime;
+      telemetry.trackDependency("ExternalService", "POST /endpoint", duration, false);
+      throw e;
+    }
+  }
+
+  /**
+   * Example: Circuit Breaker + Retry.
+   *
+   * <p>Combines circuit breaker with automatic retry.
+   * Retry happens before circuit breaker evaluates failure.
+   */
+  @CircuitBreaker(name = "externalService", fallbackMethod = "fallbackResponse")
+  @Retry(name = "externalService")
+  public String callWithRetry(String requestData) {
+    logger.info("Calling external service with retry");
+    return restTemplate.postForObject(
+        "https://api.example.com/endpoint",
+        requestData,
+        String.class);
+  }
+
+  /**
+   * Example: Full resilience stack.
+   *
+   * <p>Combines all patterns:
+   * 1. Rate Limiter: Throttles requests
+   * 2. Circuit Breaker: Prevents cascade failures
+   * 3. Retry: Automatic retry on transient failures
+   * 4. Bulkhead: Limits concurrent calls
+   *
+   * <p>Order matters: RateLimiter → CircuitBreaker → Retry → Bulkhead
+   */
+  @RateLimiter(name = "externalService")
+  @CircuitBreaker(name = "externalService", fallbackMethod = "fallbackResponse")
+  @Retry(name = "externalService")
+  @Bulkhead(name = "heavyOperation")
+  public String callWithFullResilience(String requestData) {
+    logger.info("Calling external service with full resilience");
+    return restTemplate.postForObject(
+        "https://api.example.com/endpoint",
+        requestData,
+        String.class);
+  }
+
+  /**
+   * Example: Async with Time Limiter.
+   *
+   * <p>For async operations with timeout protection.
+   */
+  @TimeLimiter(name = "externalService")
+  @CircuitBreaker(name = "externalService", fallbackMethod = "fallbackResponseAsync")
+  public CompletableFuture<String> callAsync(String requestData) {
+    logger.info("Calling external service asynchronously");
+    return CompletableFuture.supplyAsync(() ->
+        restTemplate.postForObject(
+            "https://api.example.com/endpoint",
+            requestData,
+            String.class));
+  }
+
+  /**
+   * Fallback method for synchronous calls.
+   *
+   * <p>Called when circuit is open or all retries exhausted.
+   */
+  private String fallbackResponse(String requestData, Exception ex) {
+    logger.warn("Fallback triggered for request: {}", requestData, ex);
+
+    telemetry.trackEvent("ExternalServiceFallback",
+        Map.of("reason", ex.getClass().getSimpleName(),
+               "message", ex.getMessage() != null ? ex.getMessage() : "Unknown"));
+
+    return "Service temporarily unavailable. Please try again later.";
+  }
+
+  /**
+   * Fallback method for async calls.
+   */
+  private CompletableFuture<String> fallbackResponseAsync(String requestData, Exception ex) {
+    logger.warn("Async fallback triggered for request: {}", requestData, ex);
+    return CompletableFuture.completedFuture(fallbackResponse(requestData, ex));
+  }
+}

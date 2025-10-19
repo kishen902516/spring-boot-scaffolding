@@ -1,0 +1,177 @@
+package ${PACKAGE}.architecture;
+
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
+import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
+
+import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
+import com.tngtech.archunit.lang.ArchRule;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Architecture tests using ArchUnit.
+ *
+ * <p>Enforces Clean Architecture rules:
+ * - Layer dependencies (domain → application → infrastructure → api)
+ * - Naming conventions
+ * - Package structure
+ * - Framework isolation
+ */
+@DisplayName("Clean Architecture Tests")
+class ArchitectureTest {
+
+  private static JavaClasses classes;
+
+  @BeforeAll
+  static void setUp() {
+    classes = new ClassFileImporter()
+        .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+        .importPackages("${PACKAGE}");
+  }
+
+  @Test
+  @DisplayName("Domain layer should not depend on other layers")
+  void domainLayerShouldNotDependOnOtherLayers() {
+    ArchRule rule = noClasses()
+        .that().resideInAPackage("..domain..")
+        .should().dependOnClassesThat()
+        .resideInAnyPackage("..application..", "..infrastructure..", "..api..");
+
+    rule.check(classes);
+  }
+
+  @Test
+  @DisplayName("Domain layer should not depend on framework classes")
+  void domainLayerShouldNotDependOnFramework() {
+    ArchRule rule = noClasses()
+        .that().resideInAPackage("..domain..")
+        .should().dependOnClassesThat()
+        .resideInAnyPackage(
+            "org.springframework..",
+            "jakarta.persistence..",
+            "org.hibernate..",
+            "com.microsoft.applicationinsights.."
+        );
+
+    rule.check(classes);
+  }
+
+  @Test
+  @DisplayName("Application layer should only depend on domain layer")
+  void applicationLayerShouldOnlyDependOnDomain() {
+    ArchRule rule = noClasses()
+        .that().resideInAPackage("..application..")
+        .should().dependOnClassesThat()
+        .resideInAnyPackage("..infrastructure..", "..api..");
+
+    rule.check(classes);
+  }
+
+  @Test
+  @DisplayName("Use cases should be in application layer")
+  void useCasesShouldBeInApplicationLayer() {
+    ArchRule rule = classes()
+        .that().haveSimpleNameEndingWith("UseCase")
+        .or().haveSimpleNameEndingWith("UseCaseImpl")
+        .should().resideInAPackage("..application.usecase..");
+
+    rule.check(classes);
+  }
+
+  @Test
+  @DisplayName("Repositories should be interfaces in domain layer")
+  void repositoriesShouldBeInterfacesInDomain() {
+    ArchRule rule = classes()
+        .that().haveSimpleNameEndingWith("Repository")
+        .and().resideInAPackage("..domain.port.output..")
+        .should().beInterfaces();
+
+    rule.check(classes);
+  }
+
+  @Test
+  @DisplayName("Repository implementations should be in infrastructure layer")
+  void repositoryImplementationsShouldBeInInfrastructure() {
+    ArchRule rule = classes()
+        .that().haveSimpleNameEndingWith("RepositoryAdapter")
+        .or().haveSimpleNameEndingWith("RepositoryImpl")
+        .should().resideInAPackage("..infrastructure.adapter.persistence..");
+
+    rule.check(classes);
+  }
+
+  @Test
+  @DisplayName("Controllers should be in API layer")
+  void controllersShouldBeInApiLayer() {
+    ArchRule rule = classes()
+        .that().haveSimpleNameEndingWith("Controller")
+        .should().resideInAPackage("..api.controller..");
+
+    rule.check(classes);
+  }
+
+  @Test
+  @DisplayName("DTOs should be in API layer")
+  void dtosShouldBeInApiLayer() {
+    ArchRule rule = classes()
+        .that().haveSimpleNameEndingWith("Dto")
+        .or().haveSimpleNameEndingWith("Request")
+        .or().haveSimpleNameEndingWith("Response")
+        .should().resideInAPackage("..api.dto..");
+
+    rule.check(classes);
+  }
+
+  @Test
+  @DisplayName("Entities should be in domain layer")
+  void entitiesShouldBeInDomainLayer() {
+    ArchRule rule = classes()
+        .that().resideInAPackage("..domain.model.entity..")
+        .should().notDependOnClassesThat()
+        .resideInAnyPackage("..infrastructure..", "..api..");
+
+    rule.check(classes);
+  }
+
+  @Test
+  @DisplayName("Clean architecture layers should be respected")
+  void cleanArchitectureLayersShouldBeRespected() {
+    ArchRule rule = layeredArchitecture()
+        .consideringAllDependencies()
+        .layer("Domain").definedBy("..domain..")
+        .layer("Application").definedBy("..application..")
+        .layer("Infrastructure").definedBy("..infrastructure..")
+        .layer("API").definedBy("..api..")
+
+        .whereLayer("Domain").mayOnlyBeAccessedByLayers("Application", "Infrastructure", "API")
+        .whereLayer("Application").mayOnlyBeAccessedByLayers("Infrastructure", "API")
+        .whereLayer("Infrastructure").mayOnlyBeAccessedByLayers("API")
+        .whereLayer("API").mayNotBeAccessedByAnyLayer();
+
+    rule.check(classes);
+  }
+
+  @Test
+  @DisplayName("Configuration classes should be in infrastructure config package")
+  void configurationClassesShouldBeInConfigPackage() {
+    ArchRule rule = classes()
+        .that().areAnnotatedWith(org.springframework.context.annotation.Configuration.class)
+        .should().resideInAPackage("..infrastructure.config..");
+
+    rule.check(classes);
+  }
+
+  @Test
+  @DisplayName("Services should not be named with 'Manager' or 'Helper'")
+  void servicesShouldHaveGoodNames() {
+    ArchRule rule = noClasses()
+        .should().haveSimpleNameEndingWith("Manager")
+        .orShould().haveSimpleNameEndingWith("Helper")
+        .orShould().haveSimpleNameEndingWith("Util");
+
+    rule.check(classes);
+  }
+}

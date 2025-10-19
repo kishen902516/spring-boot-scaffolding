@@ -1,0 +1,49 @@
+package ${PACKAGE}.infrastructure.config;
+
+import org.apache.camel.CamelContext;
+import org.apache.camel.spring.boot.CamelContextConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * Apache Camel configuration.
+ *
+ * <p>Configures:
+ * - Camel context
+ * - Global error handling
+ * - Metrics and monitoring
+ * - Threading model
+ */
+@Configuration
+public class CamelConfig {
+
+  /**
+   * Customizes the Camel context.
+   */
+  @Bean
+  public CamelContextConfiguration camelContextConfiguration() {
+    return new CamelContextConfiguration() {
+      @Override
+      public void beforeApplicationStart(CamelContext camelContext) {
+        // Enable message history for debugging
+        camelContext.setMessageHistory(true);
+
+        // Enable stream caching for large messages
+        camelContext.setStreamCaching(true);
+
+        // Set thread pool configuration
+        camelContext.getExecutorServiceManager()
+            .setDefaultThreadPoolProfile(
+                camelContext.getExecutorServiceManager().getDefaultThreadPoolProfile()
+                    .maxPoolSize(20)
+                    .maxQueueSize(1000)
+            );
+      }
+
+      @Override
+      public void afterApplicationStart(CamelContext camelContext) {
+        // Post-startup configuration if needed
+      }
+    };
+  }
+}

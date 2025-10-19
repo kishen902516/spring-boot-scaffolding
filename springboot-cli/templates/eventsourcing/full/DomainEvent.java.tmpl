@@ -1,0 +1,69 @@
+package ${PACKAGE}.domain.event;
+
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * Base interface for all domain events.
+ *
+ * <p>Domain events represent things that have happened in the domain.
+ * They are:
+ * - Immutable (past facts cannot change)
+ * - Named in past tense (OrderCreated, PaymentProcessed)
+ * - Self-describing
+ *
+ * <p>Example implementation:
+ * <pre>{@code
+ * public record OrderCreatedEvent(
+ *     UUID eventId,
+ *     UUID aggregateId,
+ *     long aggregateVersion,
+ *     Instant occurredAt,
+ *     UUID customerId,
+ *     List<OrderItem> items,
+ *     BigDecimal totalAmount
+ * ) implements DomainEvent {
+ *
+ *   public OrderCreatedEvent(UUID aggregateId, UUID customerId, List<OrderItem> items) {
+ *     this(
+ *       UUID.randomUUID(),
+ *       aggregateId,
+ *       1,
+ *       Instant.now(),
+ *       customerId,
+ *       items,
+ *       calculateTotal(items)
+ *     );
+ *   }
+ * }
+ * }</pre>
+ */
+public interface DomainEvent {
+
+  /**
+   * Unique identifier for this event.
+   */
+  UUID getEventId();
+
+  /**
+   * ID of the aggregate this event belongs to.
+   */
+  UUID getAggregateId();
+
+  /**
+   * Version of the aggregate after this event.
+   */
+  long getAggregateVersion();
+
+  /**
+   * When this event occurred.
+   */
+  Instant getOccurredAt();
+
+  /**
+   * Event type name for serialization/deserialization.
+   */
+  default String getEventType() {
+    return this.getClass().getSimpleName();
+  }
+}

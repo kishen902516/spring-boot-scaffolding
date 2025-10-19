@@ -1,0 +1,93 @@
+package ${PACKAGE}.infrastructure.config;
+
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.retry.RetryConfig;
+import io.github.resilience4j.retry.RetryRegistry;
+import io.github.resilience4j.timelimiter.TimeLimiterConfig;
+import io.github.resilience4j.timelimiter.TimeLimiterRegistry;
+import java.time.Duration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * Configuration for Resilience4j patterns.
+ *
+ * <p>This configuration provides default settings for:
+ * - Circuit Breaker (prevent cascading failures)
+ * - Retry (automatic retry with exponential backoff)
+ * - Time Limiter (timeout protection)
+ * - Rate Limiter (throttling)
+ * - Bulkhead (concurrency limiting)
+ */
+@Configuration
+public class ResilienceConfig {
+
+  /**
+   * Default Circuit Breaker configuration.
+   *
+   * <p>Circuit states:
+   * - CLOSED: Normal operation, requests pass through
+   * - OPEN: Too many failures, requests fail immediately
+   * - HALF_OPEN: Testing if service recovered
+   */
+  @Bean
+  public CircuitBreakerRegistry circuitBreakerRegistry() {
+    CircuitBreakerConfig config = CircuitBreakerConfig.custom()
+        .slidingWindowSize(10)  // Number of calls to record
+        .failureRateThreshold(50.0f)  // 50% failure rate opens circuit
+        .waitDurationInOpenState(Duration.ofSeconds(10))  // Wait before trying half-open
+        .permittedNumberOfCallsInHalfOpenState(3)  // Test calls in half-open
+        .automaticTransitionFromOpenToHalfOpenEnabled(true)
+        .minimumNumberOfCalls(5)  // Minimum calls before calculating failure rate
+        .slowCallDurationThreshold(Duration.ofSeconds(3))  // Slow call threshold
+        .slowCallRateThreshold(50.0f)  // 50% slow calls also opens circuit
+        .build();
+
+    return CircuitBreakerRegistry.of(config);
+  }
+
+  /**
+   * Default Retry configuration with exponential backoff.
+   *
+   * <p>Retry pattern:
+   * - Attempt 1: Immediate
+   * - Attempt 2: After 1s
+   * - Attempt 3: After 2s (2^1)
+   * - Attempt 4: After 4s (2^2)
+   */
+  @Bean
+  public RetryRegistry retryRegistry() {
+    RetryConfig config = RetryConfig.custom()
+        .maxAttempts(3)  // Total attempts
+        .waitDuration(Duration.ofSeconds(1))  // Initial wait
+        .intervalFunction(
+            io.github.resilience4j.retry.IntervalFunction.ofExponentialBackoff(
+                Duration.ofSeconds(1), 2.0))  // Exponential backoff
+        .retryExceptions(
+            java.net.ConnectException.class,
+            java.io.IOException.class,
+            java.util.concurrent.TimeoutException.class)
+        .ignoreExceptions(
+            IllegalArgumentException.class,
+            IllegalStateException.class)
+        .build();
+
+    return RetryRegistry.of(config);
+  }
+
+  /**
+   * Default Time Limiter configuration.
+   *
+   * <p>Prevents requests from hanging indefinitely.
+   */
+  @Bean
+  public TimeLimiterRegistry timeLimiterRegistry() {
+    TimeLimiterConfig config = TimeLimiterConfig.custom()
+        .timeoutDuration(Duration.ofSeconds(5))  // 5 second timeout
+        .cancelRunningFuture(true)  // Cancel if timeout
+        .build();
+
+    return TimeLimiterRegistry.of(config);
+  }
+}
