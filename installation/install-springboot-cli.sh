@@ -103,8 +103,8 @@ install_cli() {
 # Set executable permissions
 set_permissions() {
     log_info "Setting executable permissions..."
-    chmod +x "$INSTALL_DIR/bin/springboot-cli.sh"
-    chmod +x "$INSTALL_DIR/bin/commands/"*.sh
+    chmod +x "$INSTALL_DIR/springboot-cli/bin/springboot-cli.sh"
+    chmod +x "$INSTALL_DIR/springboot-cli/bin/commands/"*.sh
     log_success "Permissions set"
 }
 
@@ -125,10 +125,10 @@ setup_path() {
     fi
 
     # Check if already in PATH config
-    PATH_EXPORT="export PATH=\"\$PATH:$INSTALL_DIR/bin\""
+    PATH_EXPORT="export PATH=\"\$PATH:$INSTALL_DIR/springboot-cli/bin\""
 
     if [ -n "$SHELL_CONFIG" ]; then
-        if grep -q "$INSTALL_DIR/bin" "$SHELL_CONFIG" 2>/dev/null; then
+        if grep -q "$INSTALL_DIR/springboot-cli/bin" "$SHELL_CONFIG" 2>/dev/null; then
             log_info "PATH already configured in $SHELL_CONFIG"
         else
             log_info "Adding CLI to PATH in $SHELL_CONFIG"
@@ -152,7 +152,7 @@ setup_path() {
             log_info "Symlink already exists in /usr/local/bin"
             rm -f "/usr/local/bin/springboot-cli"
         fi
-        ln -s "$INSTALL_DIR/bin/springboot-cli.sh" "/usr/local/bin/springboot-cli"
+        ln -s "$INSTALL_DIR/springboot-cli/bin/springboot-cli.sh" "/usr/local/bin/springboot-cli"
         log_success "Created symlink: /usr/local/bin/springboot-cli"
     fi
 }
@@ -168,8 +168,8 @@ create_alias_helper() {
 # Source this file to create a convenient alias
 # Usage: source ~/.springboot-cli/springboot-cli-alias.sh
 
-alias springboot-cli="${HOME}/.springboot-cli/bin/springboot-cli.sh"
-alias sbc="${HOME}/.springboot-cli/bin/springboot-cli.sh"
+alias springboot-cli="${HOME}/.springboot-cli/springboot-cli/bin/springboot-cli.sh"
+alias sbc="${HOME}/.springboot-cli/springboot-cli/bin/springboot-cli.sh"
 
 echo "Spring Boot CLI aliases created:"
 echo "  springboot-cli - Full command"
@@ -197,7 +197,7 @@ show_usage_info() {
     echo "     source ~/.bashrc    # or ~/.zshrc"
     echo ""
     echo "  2. Or use directly:"
-    echo "     $INSTALL_DIR/bin/springboot-cli.sh"
+    echo "     $INSTALL_DIR/springboot-cli/bin/springboot-cli.sh"
     echo ""
     echo "  3. Or create an alias:"
     echo "     source $INSTALL_DIR/springboot-cli-alias.sh"
@@ -214,8 +214,8 @@ show_usage_info() {
     echo "  springboot-cli help"
     echo ""
     log_info "Documentation:"
-    echo "  - README: $INSTALL_DIR/README.md"
-    echo "  - LLM Guide: $INSTALL_DIR/docs/llm-usage.md"
+    echo "  - README: $INSTALL_DIR/springboot-cli/README.md"
+    echo "  - LLM Guide: $INSTALL_DIR/springboot-cli/docs/llm-usage.md"
     echo "  - GitHub: $GITHUB_REPO"
     echo ""
 }
