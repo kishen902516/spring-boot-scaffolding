@@ -2,6 +2,19 @@
 
 A comprehensive CLI tool for standardizing Spring Boot API development with Clean Architecture, API-First development, and production-ready features out of the box.
 
+## 📦 Quick Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kishen902516/spring-boot-scaffolding/main/install-springboot-cli.sh | bash
+```
+
+Then verify:
+```bash
+springboot-cli help
+```
+
+> **See [INSTALLATION.md](INSTALLATION.md) for detailed installation options and troubleshooting**
+
 ## ✨ Features
 
 - **Clean Architecture** - Domain-driven design with clear separation of concerns
@@ -24,24 +37,9 @@ A comprehensive CLI tool for standardizing Spring Boot API development with Clea
 
 ## 🚀 Quick Start
 
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/your-org/springboot-cli.git
-cd springboot-cli
-```
-
-2. Make the CLI executable:
-```bash
-chmod +x bin/springboot-cli.sh
-chmod +x bin/commands/*.sh
-```
-
-3. Add to PATH (optional):
-```bash
-export PATH="$PATH:$(pwd)/bin"
-```
+> **Already installed?** Skip to [Basic Usage](#basic-usage) below
+>
+> **Need to install?** See [📦 Quick Install](#-quick-install) above or [INSTALLATION.md](INSTALLATION.md)
 
 ### Basic Usage
 
