@@ -214,7 +214,7 @@ generate_pom() {
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
         <resilience4j.version>2.2.0</resilience4j.version>
-        <applicationinsights.version>3.5.1</applicationinsights.version>
+        <applicationinsights.version>3.7.5</applicationinsights.version>
         <testcontainers.version>1.19.3</testcontainers.version>
         <archunit.version>1.2.1</archunit.version>
         <pact.version>4.6.3</pact.version>
@@ -304,7 +304,7 @@ EOF
         <!-- Observability -->
         <dependency>
             <groupId>com.microsoft.azure</groupId>
-            <artifactId>applicationinsights-spring-boot-starter</artifactId>
+            <artifactId>applicationinsights-core</artifactId>
             <version>${applicationinsights.version}</version>
         </dependency>
         <dependency>
@@ -786,6 +786,18 @@ EOF
     log_success "Generated .gitignore"
 }
 
+# Generate checkstyle.xml
+generate_checkstyle() {
+    log_info "Generating checkstyle.xml"
+
+    if [ -f "$TEMPLATES_DIR/base/checkstyle.xml" ]; then
+        cp "$TEMPLATES_DIR/base/checkstyle.xml" "$PROJECT_NAME/checkstyle.xml"
+        log_success "Generated checkstyle.xml"
+    else
+        log_warning "checkstyle.xml template not found, skipping"
+    fi
+}
+
 # Main execution
 main() {
     parse_arguments "$@"
@@ -799,6 +811,7 @@ main() {
     generate_pom
     generate_application_files
     generate_gitignore
+    generate_checkstyle
 
     # If OpenAPI spec provided, copy it
     if [ -n "$OPENAPI_SPEC" ]; then
