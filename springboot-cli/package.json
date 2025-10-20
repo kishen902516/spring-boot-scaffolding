@@ -1,0 +1,57 @@
+{
+  "name": "@springboot-cli/generator",
+  "version": "1.0.0",
+  "description": "A comprehensive CLI tool for generating production-ready Spring Boot microservices with Clean Architecture, API-first development, and enterprise-grade observability",
+  "main": "index.js",
+  "bin": {
+    "springboot-cli": "./bin/cli.js"
+  },
+  "scripts": {
+    "postinstall": "chmod +x bin/springboot-cli.sh bin/cli.js bin/commands/*.sh",
+    "test": "echo \"Testing via bash scripts\" && ./bin/springboot-cli.sh --version"
+  },
+  "keywords": [
+    "spring-boot",
+    "cli",
+    "generator",
+    "microservices",
+    "clean-architecture",
+    "api-first",
+    "openapi",
+    "java",
+    "maven",
+    "scaffold",
+    "boilerplate",
+    "azure",
+    "application-insights",
+    "oauth2",
+    "event-sourcing",
+    "ddd",
+    "domain-driven-design"
+  ],
+  "author": "Kishen Sivalingam",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kishen902516/springboot-cli.git"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "os": [
+    "linux",
+    "darwin"
+  ],
+  "files": [
+    "bin/",
+    "templates/",
+    "generators/",
+    "config/",
+    "docs/",
+    "README.md",
+    "IMPLEMENTATION_SUMMARY.md"
+  ],
+  "preferGlobal": true,
+  "dependencies": {},
+  "devDependencies": {}
+}

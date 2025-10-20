@@ -1,0 +1,42 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+circle.yml
+
+# Development files
+node_modules/
+npm-debug.log
+yarn-error.log
+.npm/
+
+# Documentation (keep README.md and IMPLEMENTATION_SUMMARY.md)
+*.draft.md
+CONTRIBUTING.md
+CHANGELOG.md
+
+# Build artifacts
+*.log
