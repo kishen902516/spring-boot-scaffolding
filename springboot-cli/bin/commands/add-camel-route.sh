@@ -94,8 +94,8 @@ if [ ! -f "pom.xml" ]; then
     exit 1
 fi
 
-# Extract package from pom.xml
-PACKAGE=$(grep -oP '<groupId>\K[^<]+' pom.xml | head -1)
+# Extract package from pom.xml (get project groupId, not parent groupId)
+PACKAGE=$(grep "<groupId>" pom.xml | sed -n '2p' | sed 's/.*<groupId>\(.*\)<\/groupId>.*/\1/' | xargs)
 
 if [ -z "$PACKAGE" ]; then
     print_error "Could not extract package from pom.xml"

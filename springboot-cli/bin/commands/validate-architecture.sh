@@ -83,9 +83,9 @@ Architecture Rules Checked:
 EOF
 }
 
-# Extract package name from pom.xml
+# Extract package name from pom.xml (get project groupId, not parent groupId)
 get_package_name() {
-    local package_name=$(grep -m1 "<groupId>" pom.xml | sed 's/.*<groupId>\(.*\)<\/groupId>.*/\1/' | xargs)
+    local package_name=$(grep "<groupId>" pom.xml | sed -n '2p' | sed 's/.*<groupId>\(.*\)<\/groupId>.*/\1/' | xargs)
     if [ -z "$package_name" ]; then
         log_error "Could not determine package name from pom.xml"
         exit 1

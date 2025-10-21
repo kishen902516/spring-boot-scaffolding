@@ -75,7 +75,8 @@ if [ ! -f "pom.xml" ]; then
     exit 1
 fi
 
-PACKAGE=$(grep -oP '<groupId>\K[^<]+' pom.xml | head -1)
+# Extract package from pom.xml (get project groupId, not parent groupId)
+PACKAGE=$(grep "<groupId>" pom.xml | sed -n '2p' | sed 's/.*<groupId>\(.*\)<\/groupId>.*/\1/' | xargs)
 
 print_info "Generating ${MODE} contract tests..."
 
