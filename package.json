@@ -1,0 +1,58 @@
+{
+  "name": "springboot-cli-claude-plugin",
+  "version": "1.0.0",
+  "description": "Claude Code plugin for Spring Boot microservices with Clean Architecture, CQRS, and TDD",
+  "keywords": [
+    "spring-boot",
+    "claude",
+    "claude-code",
+    "clean-architecture",
+    "cqrs",
+    "tdd",
+    "java-21",
+    "microservices",
+    "cli"
+  ],
+  "author": "Spring Boot CLI Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/springboot-cli.git"
+  },
+  "main": "index.js",
+  "files": [
+    ".claude/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "springboot-claude-init": "./scripts/init-plugin.sh"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js",
+    "init": "bash scripts/init-plugin.sh",
+    "validate": "bash scripts/validate-installation.sh",
+    "pack": "npm pack"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server-github": "^0.5.0"
+  },
+  "devDependencies": {},
+  "peerDependencies": {},
+  "springbootClaude": {
+    "pluginVersion": "1.0.0",
+    "requiredCliVersion": "1.0.0",
+    "features": [
+      "slash-commands",
+      "agents",
+      "hooks",
+      "github-integration"
+    ],
+    "cliPath": "/home/kishen90/java/springboot-cli"
+  }
+}
