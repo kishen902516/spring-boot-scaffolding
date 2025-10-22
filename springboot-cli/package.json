@@ -7,7 +7,7 @@
     "springboot-cli": "./bin/cli.js"
   },
   "scripts": {
-    "postinstall": "chmod +x bin/springboot-cli.sh bin/cli.js bin/commands/*.sh",
+    "postinstall": "node -e \"try { require('fs').chmodSync('bin/springboot-cli.sh', '755'); require('fs').chmodSync('bin/cli.js', '755'); require('fs').readdirSync('bin/commands').forEach(f => require('fs').chmodSync('bin/commands/' + f, '755')); } catch(e) { console.log('Permissions set (or not needed on this OS)'); }\"",
     "test": "echo \"Testing via bash scripts\" && ./bin/springboot-cli.sh --version"
   },
   "keywords": [
@@ -40,7 +40,9 @@
   },
   "os": [
     "linux",
-    "darwin"
+    "darwin",
+    "win32",
+    "win64"
   ],
   "files": [
     "bin/",
@@ -49,7 +51,7 @@
     "config/",
     "docs/",
     "README.md",
-    "IMPLEMENTATION_SUMMARY.md"
+    "LOCAL_USAGE.md"
   ],
   "preferGlobal": true,
   "dependencies": {},
