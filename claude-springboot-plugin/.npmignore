@@ -1,0 +1,56 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+test/
+tests/
+__tests__/
+*.test.js
+*.spec.js
+coverage/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+circle.yml
+.circleci/
+
+# Development files
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn.lock
+package-lock.json
+.npm/
+
+# Build artifacts
+*.log
+dist/
+build/
+
+# Documentation drafts
+*.draft.md
+CONTRIBUTING.md
+CHANGELOG.md
+
+# Keep these files
+!README.md
+!LICENSE
+!claude-config/
+!install.js
+!bin/

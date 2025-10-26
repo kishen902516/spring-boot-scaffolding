@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p springboot-cli/{bin/commands,templates/{base,layers/{domain,application,infrastructure,api},security,observability,eventsourcing/{full,lite},camel/routes},generators/openapi-generator,config,docs})",
+      "Bash(chmod +x /home/kishen90/java/springboot-cli/bin/commands/add-client.sh)",
+      "Bash(mkdir:*)",
+      "Bash(tree:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
