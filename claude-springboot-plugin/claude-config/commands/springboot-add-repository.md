@@ -25,7 +25,7 @@ Add a repository implementation following the port/adapter pattern with Spring D
 
 ```bash
 cd ${PROJECT_ROOT}
-${SPRINGBOOT_CLI_PATH}/bin/springboot-cli.sh add repository \
+springboot-cli add repository \
   --name ${name} \
   --package ${package}.infrastructure.persistence \
   --entity ${entity} \

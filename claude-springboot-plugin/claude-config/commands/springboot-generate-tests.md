@@ -43,7 +43,7 @@ Generate comprehensive test suites following the test pyramid (75% unit, 20% int
 
 ```bash
 cd ${PROJECT_ROOT}
-${SPRINGBOOT_CLI_PATH}/bin/springboot-cli.sh generate tests \
+springboot-cli generate tests \
   --type ${type} \
   --scope ${scope} \
   --output src/test/java

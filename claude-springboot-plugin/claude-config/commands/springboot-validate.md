@@ -37,7 +37,7 @@ Run comprehensive validation checks for architecture, coverage, and code style.
 
 ```bash
 cd ${PROJECT_ROOT}
-${SPRINGBOOT_CLI_PATH}/bin/springboot-cli.sh validate ${aspect}
+springboot-cli validate ${aspect}
 ```
 
 Validation checks:

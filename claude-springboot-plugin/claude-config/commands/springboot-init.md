@@ -20,7 +20,7 @@ Initialize a new Spring Boot project with Clean Architecture, CQRS, and enterpri
 
 Execute the Spring Boot CLI init command:
 ```bash
-${SPRINGBOOT_CLI_PATH}/bin/springboot-cli.sh init \
+springboot-cli init \
   --name ${name} \
   --package ${package} \
   --database ${database} \

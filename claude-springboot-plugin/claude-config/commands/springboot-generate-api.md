@@ -22,7 +22,7 @@ Generate REST controllers and DTOs from OpenAPI specification following API-firs
 
 ```bash
 cd ${PROJECT_ROOT}
-${SPRINGBOOT_CLI_PATH}/bin/springboot-cli.sh generate api \
+springboot-cli generate api \
   --spec ${spec} \
   --package ${package}.api \
   --controllers "${controllers}"

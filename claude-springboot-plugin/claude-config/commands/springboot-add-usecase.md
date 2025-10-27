@@ -31,7 +31,7 @@ Add a command or query handler following CQRS pattern with Clean Architecture.
 
 ```bash
 cd ${PROJECT_ROOT}
-${SPRINGBOOT_CLI_PATH}/bin/springboot-cli.sh add usecase \
+springboot-cli add usecase \
   --type ${type} \
   --name ${name}UseCase \
   --package ${package}.application.usecase \

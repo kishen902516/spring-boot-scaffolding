@@ -2,22 +2,62 @@
 
 ## 🚀 5-Minute Setup
 
-### 1. Set Environment Variables
+### 1. Install GitHub MCP Server (REQUIRED)
 
 ```bash
-export GITHUB_TOKEN="your-github-token"
-export SPRINGBOOT_CLI_PATH="/home/kishen90/java/springboot-cli"
+# Install the GitHub MCP server
+npm install -g @modelcontextprotocol/server-github
+
+# Verify installation
+npx @modelcontextprotocol/server-github --version
 ```
 
-### 2. Test the Plugin
+### 2. Set Environment Variables
+
+```bash
+# GitHub token for issue/PR automation (REQUIRED)
+export GITHUB_TOKEN="your-github-token"
+
+# Spring Boot CLI path (REQUIRED)
+export SPRINGBOOT_CLI_PATH="springboot-cli"
+
+# Make permanent by adding to ~/.bashrc or ~/.zshrc
+echo 'export GITHUB_TOKEN="your-github-token"' >> ~/.bashrc
+echo 'export SPRINGBOOT_CLI_PATH="/home/kishen90/java/springboot-cli"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Need a GitHub token?**
+1. Go to: https://github.com/settings/tokens/new
+2. Select scopes: `repo`, `workflow`, `project`, `read:org`
+3. Generate and copy the token
+
+### 3. Create GitHub Project Board (REQUIRED)
+
+```
+1. Go to your repository on GitHub
+2. Click "Projects" tab
+3. Create new project → Select "Board" template
+4. Name it "Development Board"
+5. Ensure columns: Backlog, In Progress, In Review, Done
+```
+
+### 4. Validate Setup
 
 ```bash
 # Navigate to your project directory
 cd /home/kishen90/java
 
-# Test a slash command in Claude Code
-/springboot-validate --aspect all
+# Validate GitHub integration in Claude Code
+/github-setup-check
 ```
+
+**Expected output:**
+```
+✅ GitHub MCP Integration Fully Configured!
+```
+
+If you see errors, follow the setup guide: `.claude/config/GITHUB_SETUP.md`
 
 ## 🎯 Your First Feature with TDD
 
@@ -41,12 +81,24 @@ Tell the feature developer agent:
 - MongoDB repository
 ```
 
-The agent will:
-1. ✅ Create GitHub issue and branch
-2. ✅ Write tests first (TDD)
-3. ✅ Generate implementation using slash commands
-4. ✅ Validate architecture
-5. ✅ Create pull request
+The agent will **automatically**:
+
+1. ✅ **Validate GitHub MCP** is configured (stops if not)
+2. ✅ **Create GitHub issue** with requirements and acceptance criteria
+3. ✅ **Create feature branch** (format: `feature/{issue-number}-product-management`)
+4. ✅ **Update project board** (move to "In Progress")
+5. ✅ **Write tests first** (TDD: Red-Green-Refactor)
+6. ✅ **Generate implementation** using slash commands
+7. ✅ **Validate architecture** (Clean Architecture rules)
+8. ✅ **Run all tests** (unit, integration, architecture)
+9. ✅ **Create pull request** with detailed template
+10. ✅ **Link PR to issue** (auto-close on merge)
+11. ✅ **Update project board** (move to "In Review")
+
+**If GitHub MCP is NOT configured**, the agent will:
+- ❌ Stop immediately
+- 📚 Show setup guide
+- ✅ Help you configure GitHub integration
 
 ## 📝 Common Scenarios
 

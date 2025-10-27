@@ -23,7 +23,7 @@ Add a new domain entity following DDD principles with Java 21 records when appro
 
 ```bash
 cd ${PROJECT_ROOT}
-${SPRINGBOOT_CLI_PATH}/bin/springboot-cli.sh add entity \
+springboot-cli add entity \
   --name ${name} \
   --package ${package}.domain.model \
   --attributes "${attributes}"
