@@ -25,7 +25,7 @@ Add an aggregate root with business logic, invariants, and domain events.
 
 ```bash
 cd ${PROJECT_ROOT}
-${SPRINGBOOT_CLI_PATH}/bin/springboot-cli.sh add aggregate \
+springboot-cli add aggregate \
   --name ${name} \
   --package ${package}.domain.model \
   --attributes "${attributes}" \

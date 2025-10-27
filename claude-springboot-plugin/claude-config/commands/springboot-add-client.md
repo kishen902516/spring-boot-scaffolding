@@ -27,7 +27,7 @@ Add an external REST client with resilience patterns (Circuit Breaker, Retry, Ra
 
 ```bash
 cd ${PROJECT_ROOT}
-${SPRINGBOOT_CLI_PATH}/bin/springboot-cli.sh add client \
+springboot-cli add client \
   --name ${name} \
   --package ${package}.infrastructure.client \
   --base-url "${base_url}" \

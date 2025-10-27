@@ -23,7 +23,7 @@ Add a domain event for event-driven architecture and event sourcing patterns.
 
 ```bash
 cd ${PROJECT_ROOT}
-${SPRINGBOOT_CLI_PATH}/bin/springboot-cli.sh add event \
+springboot-cli add event \
   --name ${name} \
   --package ${package}.domain.event \
   --attributes "${attributes}"
