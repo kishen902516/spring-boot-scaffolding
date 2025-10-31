@@ -278,13 +278,14 @@ Generate the CLI commands needed.
 ## Git Workflow
 
 ```bash
-# Current branch (as of commit 6cd08bd)
-git branch  # implementation
+# Current branch (as of commit bd7e179)
+git branch  # add-skills
 
 # Recent commits
-# 6cd08bd - phase 2 implementation
-# 94bb424 - Phase 1 Implementation
-# d505549 - initial commit
+# bd7e179 - Fixed the spring boot cli initializer issue
+# e83cd09 - clean up
+# bbffac4 - delete .calude folder
+# d8e1e87 - feat(plugin) : added plugin feature
 ```
 
 ## Extending the CLI
