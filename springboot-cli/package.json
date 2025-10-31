@@ -1,14 +1,24 @@
 {
   "name": "@springboot-cli/generator",
-  "version": "1.0.0",
-  "description": "A comprehensive CLI tool for generating production-ready Spring Boot microservices with Clean Architecture, API-first development, and enterprise-grade observability",
+  "version": "1.1.0",
+  "description": "A comprehensive CLI tool for generating production-ready Spring Boot microservices with Clean Architecture, Architecture Orchestration, and Agent Learning System",
   "main": "index.js",
   "bin": {
-    "springboot-cli": "./bin/cli.js"
+    "springboot-cli": "./bin/cli.js",
+    "sbcli": "./bin/cli.js",
+    "orchestrator": "./bin/orchestrator-wrapper.js",
+    "learning-system": "./bin/learning-wrapper.js",
+    "validate-arch": "./bin/validate-wrapper.js"
   },
   "scripts": {
-    "postinstall": "node -e \"try { require('fs').chmodSync('bin/springboot-cli.sh', '755'); require('fs').chmodSync('bin/cli.js', '755'); require('fs').readdirSync('bin/commands').forEach(f => require('fs').chmodSync('bin/commands/' + f, '755')); } catch(e) { console.log('Permissions set (or not needed on this OS)'); }\"",
-    "test": "echo \"Testing via bash scripts\" && ./bin/springboot-cli.sh --version"
+    "postinstall": "node scripts/postinstall.js",
+    "test": "node scripts/test-all.js",
+    "validate": "./bin/orchestrator.sh validate",
+    "validate:fix": "./bin/orchestrator.sh validate --fix",
+    "monitor": "./bin/orchestrator.sh continuous .",
+    "learning:dashboard": "./bin/agent-learning-system.sh dashboard",
+    "learning:report": "./bin/orchestrator.sh report",
+    "setup": "node scripts/setup.js"
   },
   "keywords": [
     "spring-boot",
@@ -27,7 +37,12 @@
     "oauth2",
     "event-sourcing",
     "ddd",
-    "domain-driven-design"
+    "domain-driven-design",
+    "architecture-orchestration",
+    "auto-fix",
+    "agent-learning",
+    "code-validation",
+    "architecture-enforcement"
   ],
   "author": "Kishen Sivalingam",
   "license": "MIT",
@@ -50,10 +65,20 @@
     "generators/",
     "config/",
     "docs/",
+    "scripts/",
+    "data/.gitkeep",
     "README.md",
-    "LOCAL_USAGE.md"
+    "LOCAL_USAGE.md",
+    "CLAUDE_AGENT_QUICK_START.md"
   ],
   "preferGlobal": true,
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^9.0.0",
+    "fs-extra": "^11.0.0",
+    "ora": "^5.4.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0"
+  }
 }

@@ -1,0 +1,422 @@
+# Auto-Correction Rules for Architecture Violations
+# Used by the Agent Orchestrator to automatically fix common Clean Architecture violations
+
+version: "1.0"
+
+# Rule categories with auto-fix capabilities
+rules:
+
+  # Interface Implementation Rules
+  interface_implementation:
+    - id: MISSING_PORT_INTERFACE
+      description: "Infrastructure component missing port interface implementation"
+      severity: CRITICAL
+      detection:
+        file_pattern: "*/infrastructure/adapter/**/*.java"
+        class_patterns:
+          - "*Client"
+          - "*RepositoryImpl"
+          - "*Adapter"
+        missing_pattern: "implements.*Port"
+      auto_fix:
+        enabled: true
+        strategy: CREATE_AND_IMPLEMENT
+        steps:
+          - action: CREATE_PORT_INTERFACE
+            template: |
+              package ${DOMAIN_PACKAGE}.port.${PORT_TYPE};
+
+              /**
+               * Port interface for ${CLASS_NAME}
+               * Auto-generated to enforce Clean Architecture
+               */
+              public interface ${PORT_NAME} {
+                  ${METHOD_SIGNATURES}
+              }
+          - action: UPDATE_CLASS_DECLARATION
+            pattern: "public class ${CLASS_NAME}"
+            replacement: "public class ${CLASS_NAME} implements ${PORT_NAME}"
+          - action: ADD_IMPORT
+            import: "${DOMAIN_PACKAGE}.port.${PORT_TYPE}.${PORT_NAME}"
+          - action: ADD_OVERRIDE_ANNOTATIONS
+            target: "public methods"
+
+  # Domain Layer Purity Rules
+  domain_purity:
+    - id: SPRING_ANNOTATION_IN_DOMAIN
+      description: "Spring annotations found in domain layer"
+      severity: CRITICAL
+      detection:
+        file_pattern: "*/domain/**/*.java"
+        forbidden_annotations:
+          - "@Entity"
+          - "@Table"
+          - "@Component"
+          - "@Service"
+          - "@Repository"
+          - "@Autowired"
+          - "@Value"
+          - "@Configuration"
+      auto_fix:
+        enabled: true
+        strategy: EXTRACT_TO_INFRASTRUCTURE
+        steps:
+          - action: CREATE_INFRASTRUCTURE_CLASS
+            path: "infrastructure/adapter/persistence/entity/${CLASS_NAME}JpaEntity.java"
+            template: |
+              package ${INFRA_PACKAGE}.persistence.entity;
+
+              import javax.persistence.*;
+
+              @Entity
+              @Table(name = "${TABLE_NAME}")
+              public class ${CLASS_NAME}JpaEntity {
+                  ${JPA_FIELDS}
+              }
+          - action: REMOVE_ANNOTATIONS_FROM_DOMAIN
+            annotations_to_remove: "${FORBIDDEN_ANNOTATIONS}"
+          - action: CREATE_MAPPER
+            path: "infrastructure/adapter/persistence/mapper/${CLASS_NAME}Mapper.java"
+            template: |
+              package ${INFRA_PACKAGE}.persistence.mapper;
+
+              import ${DOMAIN_PACKAGE}.model.${CLASS_NAME};
+              import ${INFRA_PACKAGE}.persistence.entity.${CLASS_NAME}JpaEntity;
+              import org.springframework.stereotype.Component;
+
+              @Component
+              public class ${CLASS_NAME}Mapper {
+
+                  public ${CLASS_NAME} toDomain(${CLASS_NAME}JpaEntity entity) {
+                      if (entity == null) return null;
+                      return new ${CLASS_NAME}(
+                          ${MAPPING_FIELDS}
+                      );
+                  }
+
+                  public ${CLASS_NAME}JpaEntity toEntity(${CLASS_NAME} domain) {
+                      if (domain == null) return null;
+                      ${CLASS_NAME}JpaEntity entity = new ${CLASS_NAME}JpaEntity();
+                      ${REVERSE_MAPPING}
+                      return entity;
+                  }
+              }
+
+    - id: JPA_ANNOTATION_IN_DOMAIN
+      description: "JPA annotations found in domain entity"
+      severity: CRITICAL
+      detection:
+        file_pattern: "*/domain/model/*.java"
+        forbidden_annotations:
+          - "@Id"
+          - "@Column"
+          - "@GeneratedValue"
+          - "@ManyToOne"
+          - "@OneToMany"
+          - "@JoinColumn"
+      auto_fix:
+        enabled: true
+        strategy: SEPARATE_JPA_ENTITY
+        inherit_from: SPRING_ANNOTATION_IN_DOMAIN
+
+  # Dependency Direction Rules
+  dependency_violations:
+    - id: DOMAIN_DEPENDS_ON_INFRASTRUCTURE
+      description: "Domain layer importing from infrastructure"
+      severity: CRITICAL
+      detection:
+        file_pattern: "*/domain/**/*.java"
+        forbidden_imports:
+          - "infrastructure.*"
+          - "application.*"
+          - "api.*"
+      auto_fix:
+        enabled: true
+        strategy: INVERT_DEPENDENCY
+        steps:
+          - action: EXTRACT_INTERFACE
+            target: "domain/port"
+          - action: UPDATE_IMPORTS
+            remove: "${FORBIDDEN_IMPORT}"
+            add: "${PORT_INTERFACE}"
+
+    - id: DOMAIN_DEPENDS_ON_FRAMEWORK
+      description: "Domain importing framework classes"
+      severity: CRITICAL
+      detection:
+        file_pattern: "*/domain/**/*.java"
+        forbidden_imports:
+          - "org.springframework.*"
+          - "javax.persistence.*"
+          - "com.fasterxml.jackson.*"
+      auto_fix:
+        enabled: true
+        strategy: REMOVE_FRAMEWORK_DEPENDENCY
+        steps:
+          - action: REMOVE_IMPORT
+          - action: REPLACE_WITH_DOMAIN_CONCEPT
+
+  # Business Logic Placement Rules
+  business_logic:
+    - id: BUSINESS_LOGIC_IN_CONTROLLER
+      description: "Business logic found in REST controller"
+      severity: HIGH
+      detection:
+        file_pattern: "*/api/**/*Controller.java"
+        suspicious_patterns:
+          - "if.*\\.get.*\\(\\).*>.*"
+          - "calculate.*"
+          - "validate(?!Request)"
+          - "process.*Business"
+      auto_fix:
+        enabled: true
+        strategy: EXTRACT_TO_USE_CASE
+        steps:
+          - action: CREATE_USE_CASE
+            path: "application/usecase/${USE_CASE_NAME}.java"
+            template: |
+              package ${APP_PACKAGE}.usecase;
+
+              import ${DOMAIN_PACKAGE}.model.*;
+              import ${DOMAIN_PACKAGE}.port.*;
+              import org.springframework.stereotype.Service;
+
+              @Service
+              public class ${USE_CASE_NAME} {
+
+                  private final ${PORT_NAME} ${PORT_FIELD};
+
+                  public ${USE_CASE_NAME}(${PORT_NAME} ${PORT_FIELD}) {
+                      this.${PORT_FIELD} = ${PORT_FIELD};
+                  }
+
+                  public ${RETURN_TYPE} execute(${PARAM_TYPE} command) {
+                      ${EXTRACTED_LOGIC}
+                  }
+              }
+          - action: UPDATE_CONTROLLER
+            replace_logic_with: "${USE_CASE_NAME}.execute(command)"
+
+    - id: BUSINESS_LOGIC_IN_REPOSITORY
+      description: "Business logic found in repository implementation"
+      severity: HIGH
+      detection:
+        file_pattern: "*/infrastructure/adapter/persistence/*RepositoryImpl.java"
+        suspicious_patterns:
+          - "if.*\\.get.*\\(\\).*[><]=?"
+          - "set.*Status"
+          - "calculate"
+          - "validate"
+      auto_fix:
+        enabled: true
+        strategy: MOVE_TO_DOMAIN
+        steps:
+          - action: EXTRACT_TO_DOMAIN_METHOD
+            target_class: "${ENTITY_NAME}"
+            method_template: |
+              public void ${METHOD_NAME}() {
+                  ${EXTRACTED_LOGIC}
+              }
+          - action: UPDATE_REPOSITORY
+            replace_with: "entity.${METHOD_NAME}()"
+
+  # Naming Convention Rules
+  naming_conventions:
+    - id: INCORRECT_PORT_NAMING
+      description: "Port interface not following naming convention"
+      severity: MEDIUM
+      detection:
+        file_pattern: "*/domain/port/**/*.java"
+        required_suffix: "Port"
+      auto_fix:
+        enabled: true
+        strategy: RENAME
+        steps:
+          - action: RENAME_CLASS
+            add_suffix: "Port"
+          - action: UPDATE_REFERENCES
+
+    - id: INCORRECT_USE_CASE_NAMING
+      description: "Use case not following naming convention"
+      severity: MEDIUM
+      detection:
+        file_pattern: "*/application/usecase/**/*.java"
+        required_suffix: "UseCase"
+      auto_fix:
+        enabled: true
+        strategy: RENAME
+        steps:
+          - action: RENAME_CLASS
+            add_suffix: "UseCase"
+          - action: UPDATE_REFERENCES
+
+  # Value Object Rules
+  value_objects:
+    - id: MUTABLE_VALUE_OBJECT
+      description: "Value object is not immutable"
+      severity: HIGH
+      detection:
+        file_pattern: "*/domain/model/vo/*.java"
+        mutable_indicators:
+          - "public void set"
+          - "public.*set.*\\("
+          - "!final.*field"
+      auto_fix:
+        enabled: true
+        strategy: MAKE_IMMUTABLE
+        steps:
+          - action: MAKE_FIELDS_FINAL
+          - action: REMOVE_SETTERS
+          - action: ADD_BUILDER_PATTERN
+            template: |
+              public static class Builder {
+                  ${BUILDER_FIELDS}
+
+                  public ${CLASS_NAME} build() {
+                      return new ${CLASS_NAME}(${CONSTRUCTOR_PARAMS});
+                  }
+              }
+
+  # Aggregate Rules
+  aggregates:
+    - id: AGGREGATE_WITHOUT_REPOSITORY
+      description: "Aggregate root without corresponding repository port"
+      severity: HIGH
+      detection:
+        file_pattern: "*/domain/model/*Aggregate.java"
+        missing: "*/domain/port/*Repository.java"
+      auto_fix:
+        enabled: true
+        strategy: CREATE_REPOSITORY_PORT
+        steps:
+          - action: CREATE_INTERFACE
+            path: "domain/port/outbound/${AGGREGATE_NAME}Repository.java"
+            template: |
+              package ${DOMAIN_PACKAGE}.port.outbound;
+
+              import ${DOMAIN_PACKAGE}.model.${AGGREGATE_NAME};
+              import java.util.Optional;
+              import java.util.UUID;
+
+              public interface ${AGGREGATE_NAME}Repository {
+                  ${AGGREGATE_NAME} save(${AGGREGATE_NAME} aggregate);
+                  Optional<${AGGREGATE_NAME}> findById(UUID id);
+                  void delete(UUID id);
+              }
+
+  # CQRS Rules
+  cqrs:
+    - id: MIXED_COMMAND_QUERY_HANDLER
+      description: "Handler mixing command and query responsibilities"
+      severity: MEDIUM
+      detection:
+        file_pattern: "*/application/**/*Handler.java"
+        mixed_patterns:
+          - "both.*Command.*Query"
+          - "save.*find.*same.method"
+      auto_fix:
+        enabled: true
+        strategy: SEPARATE_HANDLERS
+        steps:
+          - action: SPLIT_INTO_COMMAND_HANDLER
+          - action: SPLIT_INTO_QUERY_HANDLER
+
+# Auto-fix configuration
+auto_fix_config:
+  enabled: true
+
+  # Maximum number of auto-fixes to apply in one session
+  max_fixes_per_session: 50
+
+  # Backup original files before fixing
+  create_backup: true
+  backup_dir: ".architecture-backup"
+
+  # Validation after fix
+  validate_after_fix: true
+
+  # Rollback on validation failure
+  rollback_on_failure: true
+
+  # Learning mode - track fixes for agent improvement
+  learning_mode: true
+
+  # Fix priority (higher severity fixed first)
+  fix_order:
+    - CRITICAL
+    - HIGH
+    - MEDIUM
+    - LOW
+
+# Learning configuration
+learning:
+  enabled: true
+
+  # Store violation patterns
+  track_patterns: true
+
+  # Agent-specific tracking
+  track_by_agent: true
+
+  # Improvement threshold (reduce prompts after this many successful fixes)
+  improvement_threshold: 10
+
+  # Update agent prompts automatically
+  auto_update_prompts: false
+
+  # Report generation
+  generate_reports: true
+  report_frequency: "weekly"
+
+# Integration with existing tools
+integrations:
+
+  # ArchUnit integration
+  archunit:
+    enabled: true
+    config_file: "src/test/java/architecture/ArchitectureTest.java"
+
+  # Git hooks
+  git_hooks:
+    pre_commit: true
+    pre_push: true
+
+  # CI/CD
+  ci_cd:
+    github_actions: true
+    validate_on_pr: true
+
+  # IDE
+  ide:
+    vscode_tasks: true
+    intellij_inspections: true
+
+# Notification settings
+notifications:
+
+  # When to notify
+  triggers:
+    - CRITICAL_VIOLATION
+    - AUTO_FIX_FAILED
+    - LEARNING_MILESTONE
+
+  # Notification channels
+  channels:
+    console: true
+    file: true
+    slack: false
+
+# Performance settings
+performance:
+
+  # Parallel processing
+  parallel_validation: true
+  max_threads: 4
+
+  # Caching
+  cache_validation_results: true
+  cache_ttl_seconds: 300
+
+  # Timeouts
+  validation_timeout_seconds: 30
+  auto_fix_timeout_seconds: 60

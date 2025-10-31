@@ -28,7 +28,7 @@ Run the initialization command:
 /springboot-init --name <service-name> --package <base-package> --database <db-type> --features <feature-list>
 ```
 
-See: `/home/kishen90/java/claude-springboot-plugin/claude-config/commands/springboot-init.md`
+See: `/springboot-init.md`
 
 **Example:**
 ```bash

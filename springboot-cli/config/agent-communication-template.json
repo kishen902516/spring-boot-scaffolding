@@ -1,0 +1,331 @@
+{
+  "communication_templates": {
+    "feature_agent_to_orchestrator": {
+      "code_complete": {
+        "agent": "feature-developer",
+        "action": "code_complete",
+        "timestamp": "ISO-8601",
+        "session_id": "uuid",
+        "feature": {
+          "name": "string",
+          "description": "string",
+          "issue_number": "integer"
+        },
+        "files": [
+          {
+            "path": "string",
+            "action": "created|modified|deleted",
+            "type": "domain|application|infrastructure|api",
+            "lines_added": "integer",
+            "lines_removed": "integer"
+          }
+        ],
+        "ready_for_validation": true,
+        "request_auto_fix": true
+      },
+      "validation_request": {
+        "agent": "feature-developer",
+        "action": "validate",
+        "timestamp": "ISO-8601",
+        "validation_type": "quick|full|continuous",
+        "auto_fix_enabled": true,
+        "files_to_validate": ["array of paths"],
+        "rules_to_check": ["array of rule ids"]
+      }
+    },
+
+    "orchestrator_to_architecture_agent": {
+      "validate_architecture": {
+        "action": "validate",
+        "source_agent": "feature-developer",
+        "session_id": "uuid",
+        "files": ["array of file paths"],
+        "validation_rules": {
+          "check_interfaces": true,
+          "check_domain_purity": true,
+          "check_dependency_direction": true,
+          "check_business_logic_placement": true,
+          "check_value_object_immutability": true
+        },
+        "auto_fix": {
+          "enabled": true,
+          "max_fixes": 50,
+          "create_backup": true,
+          "rollback_on_failure": true
+        },
+        "learning_mode": true
+      }
+    },
+
+    "architecture_agent_to_orchestrator": {
+      "validation_complete": {
+        "status": "passed|failed|partial",
+        "timestamp": "ISO-8601",
+        "session_id": "uuid",
+        "validation_summary": {
+          "files_checked": "integer",
+          "violations_found": "integer",
+          "auto_fixes_applied": "integer",
+          "manual_fixes_required": "integer"
+        },
+        "violations": [
+          {
+            "id": "uuid",
+            "type": "MISSING_INTERFACE|DOMAIN_ANNOTATION|WRONG_LAYER_LOGIC|etc",
+            "severity": "CRITICAL|HIGH|MEDIUM|LOW",
+            "file": "path",
+            "line": "integer",
+            "description": "string",
+            "auto_fixed": "boolean",
+            "fix_description": "string",
+            "manual_fix_required": "boolean",
+            "manual_fix_instructions": "string"
+          }
+        ],
+        "fixes_applied": [
+          {
+            "violation_id": "uuid",
+            "type": "CREATE_INTERFACE|MOVE_ANNOTATION|EXTRACT_USE_CASE|etc",
+            "files_created": ["array of paths"],
+            "files_modified": ["array of paths"],
+            "success": "boolean",
+            "rollback_available": "boolean"
+          }
+        ],
+        "learning_feedback": [
+          {
+            "pattern": "string",
+            "occurrences": "integer",
+            "recommendation": "string",
+            "documentation_link": "string"
+          }
+        ],
+        "next_action": "proceed|review_manual_fixes|rollback|escalate"
+      }
+    },
+
+    "orchestrator_to_feature_agent": {
+      "validation_feedback": {
+        "session_id": "uuid",
+        "timestamp": "ISO-8601",
+        "validation_result": "passed|failed|partial",
+        "summary": {
+          "violations_found": "integer",
+          "auto_fixed": "integer",
+          "manual_required": "integer",
+          "architecture_score": "0-100"
+        },
+        "auto_fixes": [
+          {
+            "type": "string",
+            "description": "string",
+            "files_affected": ["array"],
+            "learning_point": "string"
+          }
+        ],
+        "manual_fixes_needed": [
+          {
+            "type": "string",
+            "file": "path",
+            "description": "string",
+            "suggested_approach": "string",
+            "example_code": "string"
+          }
+        ],
+        "learning_points": [
+          {
+            "title": "string",
+            "description": "string",
+            "correct_pattern": "string",
+            "your_pattern": "string",
+            "why_it_matters": "string",
+            "reference": "string"
+          }
+        ],
+        "recommendations": [
+          "string"
+        ],
+        "improvement_metrics": {
+          "violations_vs_last_session": "integer",
+          "most_common_violation": "string",
+          "learning_score": "0-100",
+          "trend": "improving|stable|declining"
+        }
+      }
+    },
+
+    "test_agent_integration": {
+      "test_generation_request": {
+        "agent": "orchestrator",
+        "action": "generate_tests",
+        "source_files": ["array of paths"],
+        "test_types": ["unit", "integration", "architecture"],
+        "coverage_target": 80,
+        "framework": "junit5",
+        "include_testcontainers": true,
+        "include_wiremock": true
+      },
+      "test_generation_response": {
+        "agent": "test-engineer",
+        "status": "complete",
+        "tests_created": [
+          {
+            "type": "unit|integration|architecture",
+            "source_file": "path",
+            "test_file": "path",
+            "test_count": "integer",
+            "coverage_estimate": "percentage"
+          }
+        ],
+        "total_coverage": "percentage",
+        "recommendations": ["array of strings"]
+      }
+    },
+
+    "continuous_monitoring": {
+      "file_change_detected": {
+        "monitor_id": "uuid",
+        "timestamp": "ISO-8601",
+        "changed_files": [
+          {
+            "path": "string",
+            "change_type": "created|modified|deleted",
+            "requires_validation": "boolean"
+          }
+        ],
+        "trigger_validation": true,
+        "validation_urgency": "immediate|batch|scheduled"
+      },
+      "monitor_heartbeat": {
+        "monitor_id": "uuid",
+        "status": "active|paused|stopped",
+        "uptime_seconds": "integer",
+        "files_monitored": "integer",
+        "violations_detected": "integer",
+        "auto_fixes_applied": "integer",
+        "last_activity": "ISO-8601"
+      }
+    },
+
+    "learning_system": {
+      "violation_pattern": {
+        "agent": "string",
+        "pattern_id": "string",
+        "pattern_type": "string",
+        "frequency": "integer",
+        "first_seen": "ISO-8601",
+        "last_seen": "ISO-8601",
+        "auto_fix_success_rate": "percentage",
+        "suggested_prompt_update": "string"
+      },
+      "agent_improvement": {
+        "agent": "string",
+        "period": "daily|weekly|monthly",
+        "metrics": {
+          "total_violations": "integer",
+          "violations_per_kloc": "float",
+          "auto_fix_rate": "percentage",
+          "learning_score": "0-100",
+          "common_patterns": ["array of pattern_ids"]
+        },
+        "recommendations": [
+          {
+            "type": "prompt_update|training|configuration",
+            "description": "string",
+            "priority": "high|medium|low"
+          }
+        ]
+      }
+    }
+  },
+
+  "message_flow_examples": {
+    "typical_feature_development": [
+      {
+        "step": 1,
+        "from": "feature-agent",
+        "to": "orchestrator",
+        "message": "code_complete",
+        "description": "Feature agent completes initial code"
+      },
+      {
+        "step": 2,
+        "from": "orchestrator",
+        "to": "architecture-agent",
+        "message": "validate_architecture",
+        "description": "Orchestrator requests validation"
+      },
+      {
+        "step": 3,
+        "from": "architecture-agent",
+        "to": "orchestrator",
+        "message": "validation_complete",
+        "description": "Architecture agent reports violations and fixes"
+      },
+      {
+        "step": 4,
+        "from": "orchestrator",
+        "to": "feature-agent",
+        "message": "validation_feedback",
+        "description": "Orchestrator provides learning feedback"
+      },
+      {
+        "step": 5,
+        "from": "feature-agent",
+        "to": "orchestrator",
+        "message": "validation_request",
+        "description": "Feature agent requests re-validation after manual fixes"
+      }
+    ],
+
+    "continuous_monitoring_flow": [
+      {
+        "step": 1,
+        "from": "monitor",
+        "to": "orchestrator",
+        "message": "file_change_detected",
+        "description": "File system watcher detects changes"
+      },
+      {
+        "step": 2,
+        "from": "orchestrator",
+        "to": "architecture-agent",
+        "message": "validate_architecture",
+        "description": "Immediate validation triggered"
+      },
+      {
+        "step": 3,
+        "from": "architecture-agent",
+        "to": "orchestrator",
+        "message": "validation_complete",
+        "description": "Quick validation with auto-fix"
+      },
+      {
+        "step": 4,
+        "from": "orchestrator",
+        "to": "monitor",
+        "message": "continue_monitoring",
+        "description": "Resume file watching"
+      }
+    ]
+  },
+
+  "error_handling": {
+    "validation_error": {
+      "error_code": "string",
+      "error_type": "syntax|compilation|architecture|timeout",
+      "description": "string",
+      "file": "optional path",
+      "line": "optional integer",
+      "recovery_action": "retry|skip|manual|abort",
+      "user_message": "string"
+    },
+    "auto_fix_failure": {
+      "violation_id": "uuid",
+      "failure_reason": "string",
+      "attempted_fix": "string",
+      "rollback_performed": "boolean",
+      "manual_instructions": "string"
+    }
+  }
+}
