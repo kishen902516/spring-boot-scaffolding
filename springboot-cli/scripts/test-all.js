@@ -51,7 +51,13 @@ if (fs.existsSync(path.join(projectRoot, 'bin', 'orchestrator.sh'))) {
 
 // Test 4: Check learning system
 if (fs.existsSync(path.join(projectRoot, 'bin', 'agent-learning-system.sh'))) {
-  runTest('Learning System', 'bash bin/agent-learning-system.sh help');
+  // Check if SQLite is installed first
+  try {
+    execSync('which sqlite3', { stdio: 'ignore' });
+    runTest('Learning System', 'bash bin/agent-learning-system.sh help');
+  } catch {
+    console.log(chalk.yellow('⚠ Learning System (SQLite not installed - will work on first use)'));
+  }
 }
 
 // Test 5: Check Node wrappers
